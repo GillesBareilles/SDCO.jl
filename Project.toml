@@ -1,0 +1,8 @@
+name = "SDCO"
+uuid = "fff678f0-880f-11e8-1874-798a997c2c01"
+authors = ["GillesBareilles <gilles.bareilles@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
