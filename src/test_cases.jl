@@ -1,65 +1,89 @@
-export test_case_1a
+export test_case_1a, test_case_1a_point, test_case_1b, test_case_1c
 
 # Test case 1.a
 function test_case_1a_point()
-    dims = Vector([3])
 
-    ptj = Vector([1, 1, 1])
-    ptk = Vector([1, 2, 3])
-    ptl = Vector([1, 3, 2])
-    ptjkl = Vector([1.0, 1.0, 1.0])
-    vec = Vector{Float64}([])
-
-    # SDCOContext
-    PointE(ptj, ptk, ptl, ptjkl, dims, vec)
+    # ptxmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
+    # ptxmat = [Matrix{Float64}(I, 3, 3)]
+    x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
 end
 
 function test_case_1a()
-    nsdpvar = Vector([3])
+    cmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
+    c = PointE(cmat, Vector{Float64}())
 
-    ai = Vector([1, 2, 2, 2, 3, 3, 3])
-    aj = Vector([1, 1, 1, 1, 1, 1, 1])
-    ak = Vector([1, 1, 2, 3, 1, 2, 3])
-    al = Vector([1, 3, 2, 1, 2, 1, 3])
-    aijkl = Vector{Float64}([1, 1, 1, 1, 1, 1, 1])
+    a1mats = [sparse([1], [1], [1.], 3, 3)]
+    a1 = PointE(a1mats, Vector{Float64}())
 
-    veci = Vector{Int}([])
-    vecj = Vector{Int}([])
-    vecij = Vector{Float64}([])
-    
+    a2mats = [sparse([2, 3], [2, 1], [1., 1.], 3, 3)]
+    a2 = PointE(a2mats, Vector{Float64}())
+
+    a3mats = [sparse([2, 3], [1, 3], [1., 1.], 3, 3)]
+    a3 = PointE(a3mats, Vector{Float64}())
+
+    A = [a1, a2, a3]
+
     b = Vector{Float64}([1, 1, 1])
 
-    ci = Vector([1, 1, 1])
-    cj = Vector([1, 2, 3])
-    ck = Vector([1, 2, 3])
-    cijk = Vector{Float64}([1, 1, 1])
+    problem = SDCOContext(c, A, b)
     
-    cvecj = Vector{Int}()
-    cvecval = Vector{Float64}()
+    # ptxmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
+    # x = PointE(ptxmat, Vector{Float64}())
+    x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
 
-    problem = SDCOContext(ai, aj, ak, al, aijkl,
-                          veci, vecj, vecij,
-                          b,
-                          ci, cj, ck, cijk,
-                          cvecj, cvecval)
+    # ptsmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
+    # s = PointE(ptsmat, Vector{Float64}())
+    s = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
 
-    ptj = Vector([1, 1, 1])
-    ptk = Vector([1, 2, 3])
-    ptl = Vector([1, 2, 3])
-    ptjkl = Vector([1.0, 1.0, 1.0])
-    vec = Vector{Float64}([])
-
-    x = PointE(ptj, ptk, ptl, ptjkl, nsdpvar, vec)
-    s = x
     y = zeros(Float64, length(b))
 
     return problem, (x, y, s)
 end
 
-function main()
-    problem, init_point = test_case_1a()
+function test_case_1b()
+    c = PointE(Dense{Float64}[], Float64[1., 1.])
+    
+    A = [PointE(Dense{Float64}[], Float64[1., 2.])]
+    b = [1.]
 
-    println(problem)
+    problem = SDCOContext(c, A, b)
 
-    println(init_point)
+    x = PointE(Dense{Float64}[], Float64[1/3, 1/3])
+    y = [0.]
+    s = PointE(Dense{Float64}[], Float64[1., 1.])
+    return problem, (x, y, s)
+end
+
+function test_case_1c()
+    cmat = [sparse(1.0I, 3, 3), sparse(1.0I, 3, 3)]
+    c = PointE(cmat, Float64[1., 1.])
+
+    mat1 = sparse([1], [1], [1.], 3, 3)
+    mat2 = sparse([2, 3], [2, 1], [1., 1.], 3, 3)
+    mat3 = sparse([2, 3], [1, 3], [1., 1.], 3, 3)
+    matnull = spzeros(3,3)
+
+    a1 = PointE([mat1, matnull], Float64[0, 0])
+    a2 = PointE([mat2, matnull], Float64[0, 0])
+    a3 = PointE([mat3, matnull], Float64[0, 0])
+
+    a4 = PointE([matnull, mat1], Float64[0, 0])
+    a5 = PointE([matnull, mat2], Float64[0, 0])
+    a6 = PointE([matnull, mat3], Float64[0, 0])
+
+    a7 = PointE([matnull, matnull], Float64[1., 2.])
+    A = [a1, a2, a3, a4, a5, a6, a7]
+
+    b = Vector{Float64}([1, 1, 1, 1, 1, 1, 1])
+
+    problem = SDCOContext(c, A, b)
+
+    y0 = -(1+sqrt(17)) / 4
+    y = y0 * ones(7)
+
+    x = PointE([Matrix{Float64}(I, 3, 3), Matrix([1 0 0.25; 0 0.5 0; 0.25 0 1])], Float64[(5-sqrt(17))/2, (-3+sqrt(17))/4])
+
+    s = c - evaluate(A, y)
+
+    return problem, (x, y, s)
 end
