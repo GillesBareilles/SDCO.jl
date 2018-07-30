@@ -3,7 +3,7 @@ import Base.min
 export get_primobj, get_primslacks, get_primfeaserr
 export get_dualobj, get_dualslacks, get_dualfeaserr
 export evaluate
-export min
+export min, mu, delta
 
 
 function evaluate(A::Vector{PointE{T, U}}, x::PointE{T, V}) where {T<:Number, U, V}
@@ -47,16 +47,21 @@ function get_primobj(pb::SDCOContext{T}, x::PointE{T}) where T<:Number
     return dot(pb.c, x)
 end
 
+get_primobj(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_primobj(pb, z.x)
+
 function get_dualobj(pb::SDCOContext{T}, y::Vector{T}) where T<:Number
     @assert length(y) == length(pb.b)
     return dot(pb.b, y)
 end
 
+get_dualobj(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_dualobj(pb, z.y)
 
 
 function get_primslacks(pb::SDCOContext{T}, x::PointE{T}) where T<:Number
     return evaluate(pb.A, x) .- pb.b
 end
+
+get_primslacks(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_primslacks(pb, z.x)
 
 function get_dualslacks(pb::SDCOContext{T}, y::Vector{T}, s::PointE{T}) where T<:Number
     slacks = copy(s)
@@ -65,14 +70,19 @@ function get_dualslacks(pb::SDCOContext{T}, y::Vector{T}, s::PointE{T}) where T<
     return slacks
 end
 
+get_dualslacks(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_dualslacks(pb, z.y, z.s)
 
 function get_primfeaserr(pb::SDCOContext{T}, x::PointE{T}) where T<:Number
     return norm(get_primslacks(pb, x))
 end
 
+get_primfeaserr(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_primfeaserr(pb, z.x)
+
 function get_dualfeaserr(pb::SDCOContext{T}, y::Vector{T}, s::PointE{T}) where T<:Number
     return norm(get_dualslacks(pb, y, s))
 end
+
+get_dualfeaserr(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_dualfeaserr(pb, z.y, z.s)
 
 function min(pb::SDCOContext{T}, x::PointE{T, Dense{T}}) where {T<:Number, U<:Dense}
     minx = Inf
@@ -86,4 +96,13 @@ function min(pb::SDCOContext{T}, x::PointE{T, Dense{T}}) where {T<:Number, U<:De
     end
 
     return minx
+end
+
+mu(pb::SDCOContext, z::PointPrimalDual) = dot(z.x, z.s) / pb.nc
+
+function delta(pb, z::PointPrimalDual)
+    g = NTget_g(pb, z.x, z.s)
+    mu_z = mu(pb, z)
+
+    return 0.5 * norm(hadamard(g, sqrt(mu_z)*inv(z.x) - 1/sqrt(mu_z) * z.s, g, transposefirst=true))
 end

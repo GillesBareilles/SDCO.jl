@@ -37,7 +37,7 @@ function test_case_1a()
 
     y = zeros(Float64, length(b))
 
-    return problem, (x, y, s)
+    return problem, PointPrimalDual(x, y, s)
 end
 
 function test_case_1b()
@@ -51,7 +51,7 @@ function test_case_1b()
     x = PointE(Dense{Float64}[], Float64[1/3, 1/3])
     y = [0.]
     s = PointE(Dense{Float64}[], Float64[1., 1.])
-    return problem, (x, y, s)
+    return problem, PointPrimalDual(x, y, s)
 end
 
 function test_case_1c()
@@ -85,5 +85,5 @@ function test_case_1c()
 
     s = c - evaluate(A, y)
 
-    return problem, (x, y, s)
+    return problem, PointPrimalDual(x, y, s)
 end

@@ -1,6 +1,6 @@
 import Base.print, Base.show
 
-export print
+export print, print_pointsummary
 
 function print(io::IO, pb::SDCOContext)
     println(io, " * Nb of scalar variables:     $(pb.nscalvar)")
@@ -35,4 +35,13 @@ function show(io::IO, pt::PointE)
     end
     print(io, " - vec - ")
     display(pt.vec)
+end
+
+function print_pointsummary(pb::SDCOContext, z::PointPrimalDual)
+    println("Primal / dual obj      :    ", get_primobj(pb, z), " / ", get_dualobj(pb, z))
+    println("Primal feasability err :    ", get_primfeaserr(pb, z))
+    println("Dual feasability err   :    ", get_dualfeaserr(pb, z))
+    println("Min_K(x)               :    ", min(pb, z.x))
+    println("Min_K(s)               :    ", min(pb, z.s))
+    println("x . s                  :    ", hadamard(z.x, z.s))
 end

@@ -1,6 +1,6 @@
 module SDCO
 
-using SparseArrays, DataStructures, LinearAlgebra
+using SparseArrays, DataStructures, LinearAlgebra, Printf
 
 
 include("types.jl")

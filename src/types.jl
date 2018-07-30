@@ -80,11 +80,11 @@ function densify(x::PointE{T, Sparse{T}}) where T<:Number
     return PointE(mats, copy(x.vec))
 end
 
-# mutable struct PointPrimalDual{T}
-#     x::PointE{T}
-#     y:::Vector{T}
-#     s::PointE{T}
-# end
+mutable struct PointPrimalDual{T, U}
+    x::PointE{T, U}
+    y::Vector{T}
+    s::PointE{T, U}
+end
 
 
 mutable struct SDCOContext{T, U}
@@ -95,6 +95,7 @@ mutable struct SDCOContext{T, U}
     nsdpvar::Vector{Int}            # Size of the several SDP cones
     nscalvar::Int                   # Number of scalar variables (of type T)
     m::Int                          # Nb of constraints
+    nc::Int
 
     options::OrderedDict
 end
@@ -112,6 +113,8 @@ function SDCOContext(c::PointE{T, U}, A::Vector{PointE{T, U}}, b::Array{T, 1}; o
         @assert nscalvar == length(ai.vec)
     end
 
+    nc = sum(nsdpvar) + nscalvar
 
-    return SDCOContext(c, A, b, nsdpvar, nscalvar, m, OrderedDict())
+
+    return SDCOContext(c, A, b, nsdpvar, nscalvar, m, nc, OrderedDict())
 end

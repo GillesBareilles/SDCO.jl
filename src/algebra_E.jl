@@ -1,6 +1,6 @@
 import LinearAlgebra: dot, norm, product
-import Base: +, -, inv
-export dot, norm, add!, product, -
+import Base: +, -, inv, *
+export dot, norm, add!, product, -, +, *
 export hadamard, inv
 
 """
@@ -122,6 +122,9 @@ function product(x::PointE{T, U}, lambda::T) where {T<:Number, U}
     vec = lambda .* x.vec
     return PointE(mats, vec)
 end
+
+*(x::PointE{T, U}, lambda::T) where {T<:Number, U} = product(x, lambda)
+*(lambda::T, x::PointE{T, U}) where {T<:Number, U} = product(x, lambda)
 
 function -(x::PointE{T}) where T<:Number
     return product(x, convert(T, -1))

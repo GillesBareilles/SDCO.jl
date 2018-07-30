@@ -1,21 +1,47 @@
 export NesterovToddstep, NTget_g, NTget_w, NTget_M
 
-function NesterovToddstep(pb::SDCOContext, x::PointE{T}, y, s, mu::Float64) where T<:Number
+function NTpredcorr(pb::SDCOContext, z::PointPrimalDual{T, Dense{T}}) where T<:Number
+
+    mu_z = mu(pb, z)
+
+    if mu_z < 1e-5
+        return 1
+    end
+
+    ## Corrector step
+    dc = NesterovToddstep(pb, z, mu_z)
+    zc = z + dc
+
+    ## Predictor step
+    da = NesterovToddstep(pb, z, 0.)
+    
+    gtr = transpose(g)
+    dasdax = hadamard(da.s, da.x)
+    Enorm = norm(hadamard(inv(g), dasdax, g) + hadamard(gtr, dasdax, inv(gtr)))
+    alpha = 2 / (1 + sqrt(1+13*Enorm/(2*mu_zc)))
+    
+    zp = zc + alpha * da
+
+
+    mu_zc = mu(zc)
+    mu_zp = mu(zp)
+    @show mu_zp
+    @show (1-alpha) * mu_zc + alpha * mu_z
+
+    @show mu_z - mu_zc
+    @show mu_zp - (1-alpha) * mu_z
+end
+
+
+function NesterovToddstep(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, mu::Float64) where T<:Number
     io = stdout
     println(io, "------ NesterovToddstep ------")
-    println(io, "Input point :")
-    println(io, "Primal / dual obj      :    ", get_primobj(pb, x), " / ", get_dualobj(pb, y))
-    println(io, "Primal feasability err :    ", get_primfeaserr(pb, x))
-    println(io, "Dual feasability err   :    ", get_dualfeaserr(pb, y, s))
-    println(io, "Min_K(x)               :    ", min(pb, x))
-    println(io, "Min_K(s)               :    ", min(pb, s))
-    println(io, "x . s                  :    ", hadamard(x, s))
-
+    
     # Step 1. Compute necessary quatities
-    g = NTget_g(pb, x, s)
+    g = NTget_g(pb, z.x, z.s)
     w = NTget_w(pb, g)
-    sinv = inv(s)
-    muxs = x - product(sinv, mu)
+    sinv = inv(z.s)
+    muxs = z.x - product(sinv, mu)
 
     # Step 2. Solve M.dy = A(x - \mu inv(s))
     M = NTget_M(pb, g)
@@ -30,21 +56,18 @@ function NesterovToddstep(pb::SDCOContext, x::PointE{T}, y, s, mu::Float64) wher
     dx = - muxs - hadamard(w, ds, w)
 
     # Step 4.
-    xstep = x+dx
-    ystep = y+dy
-    sstep = s+ds
+    xstep = z.x+dx
+    ystep = z.y+dy
+    sstep = z.s+ds
 
-    println(io, "NT step computed: z+dz")
-    println(io, "Primal / dual obj      :    ", get_primobj(pb, xstep), " / ", get_dualobj(pb, ystep))
-    println(io, "Primal feasability err :    ", get_primfeaserr(pb, xstep))
-    println(io, "Dual feasability err   :    ", get_dualfeaserr(pb, ystep, sstep))
-    println(io, "Min_K(x)               :    ", min(pb, xstep))
-    println(io, "Min_K(s)               :    ", min(pb, sstep))
-    
+    @printf("||A*(dy) + ds||                    = %.3e\n", norm(evaluate(pb.A, dy) + ds))
+    @printf("||A(dx)||                          = %.3e\n", norm(evaluate(pb.A, dx)))
+    @printf("||dx + w.ds.w - mu inv(s) + x||    = %.3e\n", norm(dx + hadamard(w, ds, w) - mu * inv(z.s) + z.x))
+
     # Check that z = (x, y, s) is strict feasable
     # Check that z+dz is strict feasable too.
 
-    return dx, dy, ds
+    return PointPrimalDual(dx, dy, ds)
 end
 
 
