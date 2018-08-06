@@ -1,7 +1,7 @@
-import LinearAlgebra: dot, norm, product
-import Base: +, -, inv, *
-export dot, norm, add!, product, -, +, *
-export hadamard, inv
+import LinearAlgebra: dot, norm
+import Base: +, -, inv, *, transpose, sqrt
+export dot, norm, add, add!, product, -, +, *, transpose
+export hadamard, inv, sqrt
 
 """
 Scalar product over E, primal space
@@ -137,10 +137,24 @@ function inv(x::PointE{T, Dense{T}}) where T<:Number
     mats = Vector{Dense{T}}([zeros(T, n, n) for n in x.dims])
 
     for (i, mat) in enumerate(x.mats)
-        mats[i] = inv(cholesky(mat))
+        mats[i] = inv(factorize(mat))
     end
 
     vec = 1 ./ x.vec
+    return PointE(mats, vec)
+end
+
+"""
+    Compute the square root of E, assuming `x` lies in strict feasible space
+"""
+function sqrt(x::PointE{T, Dense{T}}) where T<:Number
+    mats = Vector{Dense{T}}([zeros(T, n, n) for n in x.dims])
+
+    for (i, mat) in enumerate(x.mats)
+        mats[i] = sqrt(factorize(mat))
+    end
+
+    vec = sqrt.(x.vec)
     return PointE(mats, vec)
 end
 
@@ -148,7 +162,7 @@ function hadamard(x::PointE{T, U}, y::PointE{T, U}) where {T<:Number, U}
     res = PointE(x.dims, length(x.vec), T, U)
 
     for (i, mati) in enumerate(x.mats)
-        res.mats[i] = x.mats[i] .* y.mats[i]
+        res.mats[i] = x.mats[i] * y.mats[i]
     end
 
     res.vec = x.vec .* y.vec
@@ -159,17 +173,12 @@ end
 function hadamard(x::PointE{T, Dense{T}}, y::PointE{T, Sparse{T}}, z::PointE{T, Dense{T}}; transposefirst=false) where T<:Number
     mats = Vector{Dense{T}}([zeros(T, n, n) for n in x.dims])
     if transposefirst
-        for matind=1:length(x.dims)
-            n = size(x.mats[matind], 1)
-            mats[matind] = zeros(n, n)
-            
-            for i=1:n, j=1:n
-                mats[matind][i, j] = x.mats[matind][j, i] * y.mats[matind][max(i, j), min(i, j)] * z.mats[matind][i, j]
-            end
+        for n=1:length(x.dims)
+            mats[n] = transpose(x.mats[n]) * Symmetric(y.mats[n], :L) * z.mats[n]
         end
     else
         for n=1:length(x.dims)
-            mats[n] = x.mats[n] .* y.mats[n] .* z.mats[n]
+            mats[n] = x.mats[n] * y.mats[n] * z.mats[n]
         end
     end
 
@@ -181,21 +190,49 @@ end
 function hadamard(x::PointE{T, Dense{T}}, y::PointE{T, Dense{T}}, z::PointE{T, Dense{T}}; transposefirst=false) where T<:Number
     mats = Vector{Dense{T}}([zeros(T, n, n) for n in x.dims])
     if transposefirst
-        for matind=1:length(x.dims)
-            n = size(x.mats[matind], 1)
-            mats[matind] = zeros(n, n)
-            
-            for i=1:n, j=1:n
-                mats[matind][i, j] = x.mats[matind][j, i] * y.mats[matind][max(i, j), min(i, j)] * z.mats[matind][i, j]
-            end
+        for n=1:length(x.dims)
+            mats[n] = transpose(x.mats[n]) * y.mats[n] * z.mats[n]
         end
     else
         for n=1:length(x.dims)
-            mats[n] = x.mats[n] .* y.mats[n] .* z.mats[n]
+            mats[n] = x.mats[n] * y.mats[n] * z.mats[n]
         end
     end
 
     vec = x.vec .* y.vec .* z.vec
 
     return PointE(mats, vec)
+end
+
+
+#####################################################################"
+## Point Primal Dual
+#####################################################################"
+function add(z1::PointPrimalDual, z2::PointPrimalDual)
+    return PointPrimalDual(z1.x+z2.x, z1.y+z2.y, z1.s+z2.s)
+end
+
++(z1::PointPrimalDual, z2::PointPrimalDual) = add(z1, z2)
+
+function product(z::PointPrimalDual{T}, lambda::U) where {T<:Number, U<:Number}
+    return PointPrimalDual(z.x * convert(T, lambda), z.y * convert(T, lambda), z.s * convert(T, lambda))
+end
+
+*(z::PointPrimalDual, lambda::T) where T<:Number = product(z, lambda)
+*(lambda::T, z::PointPrimalDual) where T<:Number = product(z, lambda)
+
+#####################################################################"
+## transpose
+#####################################################################"
+function transpose(x::PointE{T, Dense{T}}) where T<:Number
+    mats = Vector{Dense{T}}([zeros(T, n, n) for n in x.dims])
+
+    for (matind, mat) in enumerate(x.mats)
+        n = x.dims[matind]
+        for i=1:n, j=1:n
+            mats[matind][j, i] = mat[i, j]
+        end
+    end
+
+    return PointE(mats, x.vec)
 end

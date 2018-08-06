@@ -1,8 +1,34 @@
+[[ASTInterpreter2]]
+deps = ["DebuggerFramework"]
+git-tree-sha1 = "8df3d36e0286777d226f4fd4956a432b73425186"
+uuid = "e6d88f4b-b52a-544c-a8d3-7a4f12cb39c3"
+version = "0.1.1"
+
+[[Base64]]
+uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+
+[[Compat]]
+deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
+git-tree-sha1 = "c478aec93ea90bb99c307a92df17a76131bf275f"
+uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
+version = "1.0.0"
+
 [[DataStructures]]
 deps = ["InteractiveUtils", "REPL", "Random", "Serialization", "Test"]
 git-tree-sha1 = "a591110d3ac12c9b4d0cec163fcf234baed7f5ac"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 version = "0.10.0"
+
+[[Dates]]
+uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+
+[[DebuggerFramework]]
+git-tree-sha1 = "0288f278a5f58c28c67ad1cf55dce950069709b7"
+uuid = "67417a49-6d77-5db2-98c7-c13144130cd2"
+version = "0.1.2"
+
+[[DelimitedFiles]]
+uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[Distributed]]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -16,8 +42,23 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 [[LibGit2]]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
 
+[[Libdl]]
+uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
 [[LinearAlgebra]]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[[MacroTools]]
+deps = ["Compat"]
+git-tree-sha1 = "18c17737f3d375b86b495144ba7ab359ab3dca57"
+uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+version = "0.4.2"
+
+[[Markdown]]
+uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+
+[[Mmap]]
+uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]
@@ -46,11 +87,35 @@ version = "0.5.4"
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
+[[SharedArrays]]
+uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+
+[[Sockets]]
+uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+
 [[SparseArrays]]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[Statistics]]
+uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[Test]]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[[Traceur]]
+deps = ["ASTInterpreter2", "MacroTools", "Vinyl"]
+git-tree-sha1 = "e742912ca387de0e2e71df19adb0c67c5fc0ccc9"
+uuid = "37b6cedf-1f77-55f8-9503-c64b63398394"
+version = "0.1.1"
+
+[[UUIDs]]
+uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[[Vinyl]]
+deps = ["ASTInterpreter2", "MacroTools"]
+git-tree-sha1 = "fc5579bfad750163c4c5e46f7baeded0c3c8cd27"
+uuid = "83e47e11-4a7a-5bf8-892c-11f81bf9b223"
+version = "0.1.1"

@@ -97,12 +97,3 @@ function min(pb::SDCOContext{T}, x::PointE{T, Dense{T}}) where {T<:Number, U<:De
 
     return minx
 end
-
-mu(pb::SDCOContext, z::PointPrimalDual) = dot(z.x, z.s) / pb.nc
-
-function delta(pb, z::PointPrimalDual)
-    g = NTget_g(pb, z.x, z.s)
-    mu_z = mu(pb, z)
-
-    return 0.5 * norm(hadamard(g, sqrt(mu_z)*inv(z.x) - 1/sqrt(mu_z) * z.s, g, transposefirst=true))
-end

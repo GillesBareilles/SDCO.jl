@@ -1,4 +1,5 @@
 export test_case_1a, test_case_1a_point, test_case_1b, test_case_1c
+export test_case_1abis, test_case_1ater
 
 # Test case 1.a
 function test_case_1a_point()
@@ -39,6 +40,63 @@ function test_case_1a()
 
     return problem, PointPrimalDual(x, y, s)
 end
+
+function test_case_1abis()
+    cmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
+    c = PointE(cmat, Vector{Float64}())
+
+    a1mats = [sparse([1], [1], [1.], 3, 3)]
+    a1 = PointE(a1mats, Vector{Float64}())
+
+    a2mats = [sparse([2, 3], [2, 1], [1., 1.], 3, 3)]
+    a2 = PointE(a2mats, Vector{Float64}())
+
+    a3mats = [sparse([2, 3], [1, 3], [1., 1.], 3, 3)]
+    a3 = PointE(a3mats, Vector{Float64}())
+
+    A = [a1, a2, a3]
+
+    b = Vector{Float64}([1, 1, 1])
+
+    problem = SDCOContext(c, A, b)
+    
+    x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
+
+    y = ones(Float64, length(b)) * -1 * (1+sqrt(17)) / 4
+    
+    s = c - evaluate(A, y)
+
+    return problem, PointPrimalDual(x, y, s)
+end
+
+function test_case_1ater()
+    cmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
+    c = PointE(cmat, Vector{Float64}())
+
+    a1mats = [sparse([1], [1], [1.], 3, 3)]
+    a1 = PointE(a1mats, Vector{Float64}())
+
+    a2mats = [sparse([2, 3], [2, 1], [1., 1.], 3, 3)]
+    a2 = PointE(a2mats, Vector{Float64}())
+
+    a3mats = [sparse([2, 3], [1, 3], [1., 1.], 3, 3)]
+    a3 = PointE(a3mats, Vector{Float64}())
+
+    A = [a1, a2, a3]
+
+    b = Vector{Float64}([1, 1, 1])
+
+    problem = SDCOContext(c, A, b)
+    
+    x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
+
+    y = Float64[0, -1, -0.5]
+    
+    s = c - evaluate(A, y)
+
+    return problem, PointPrimalDual(x, y, s)
+end
+
 
 function test_case_1b()
     c = PointE(Dense{Float64}[], Float64[1., 1.])
