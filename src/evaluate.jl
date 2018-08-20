@@ -4,6 +4,7 @@ export get_primobj, get_primslacks, get_primfeaserr
 export get_dualobj, get_dualslacks, get_dualfeaserr
 export evaluate
 export min, mu, delta
+export issol
 
 
 function evaluate(A::Vector{PointE{T, U}}, x::PointE{T, V}) where {T<:Number, U, V}
@@ -96,4 +97,8 @@ function min(pb::SDCOContext{T}, x::PointE{T, Dense{T}}) where {T<:Number, U<:De
     end
 
     return minx
+end
+
+function get(pb, z, epsilon = 1e-10)
+    return (get_primfeaserr(pb, z) < epsilon) && (get_dualfeaserr(pb, z) < epsilon) && (dot(z.x, z.s) < epsilon)
 end

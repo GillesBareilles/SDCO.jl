@@ -3,7 +3,7 @@ using Test, SDCO
 
 @testset "SDCO instance, feasibility, objectives" begin
 
-    pb, z = test_case_1a();
+    pb, z = testcase1a();
 
     @test evaluate(pb.A, z.x) == [1., 1., 1.]
     # @test evaluate(pb.A, y) == PointE(x.dims, length(x.vec), Float64)
@@ -21,8 +21,8 @@ end
 
 @testset "Nesterov Todd step" begin
 
-    @testset "test_case_a1" begin
-        pb, z = test_case_1a()
+    @testset "testcasea1" begin
+        pb, z = testcase1a()
     
         @testset "mu = $mu" for mu in [0.2 0.4 0.6]
             dz = NesterovToddstep(pb, z, mu)
@@ -33,8 +33,8 @@ end
         end
     end
 
-    @testset "test_case_1b" begin
-        pb, z = test_case_1b()
+    @testset "testcase1b" begin
+        pb, z = testcase1b()
     
         @testset "mu = $mu" for mu in [1. 0.2 0.4 0.6]
             dz = NesterovToddstep(pb, z, mu)
@@ -49,3 +49,63 @@ end
 
 end
 
+
+@testset "Central path following" begin
+
+    @testset "testcase1a" begin 
+        pb, z = testcase1a()
+
+        @assert delta(pb, z) < 1/3
+
+        zfinal = NTpredcorr(pb, z)
+
+        epsilon = 1e-10
+        @test mu(zfinal) < 1e-10
+        
+        @test get_primfeaserr(pb, zfinal) < epsilon
+        @test get_dualfeaserr(pb, zfinal) < epsilon
+        @test dot(zfinal.x, zfinal.s) < epsilon
+    end
+
+    @testset "testcase1b" begin 
+        pb, z = testcase1b()
+
+        @assert delta(pb, z) < 1/3
+
+        zfinal = NTpredcorr(pb, z)
+
+        epsilon = 1e-10
+        @test mu(zfinal) < 1e-10
+        
+        @test get_primfeaserr(pb, zfinal) < epsilon
+        @test get_dualfeaserr(pb, zfinal) < epsilon
+        @test dot(zfinal.x, zfinal.s) < epsilon
+    end
+end
+
+@testset "Getting central point" begin
+    @testset "testcase1c" begin
+        pb, z = testcase1c()
+
+        @assert delta(pb, z) > 1/3
+
+        zcentralpath = NTgetcentralpathpoint(pb, z)
+
+        @test delta(pb, zcentralpath) < 1/3
+    end
+end
+
+@testset "Minimum Matrix Norm, feasible starting point" begin
+    @testset "mmn-$p-$q-$r" for (p, q, r) in [ (2, 2, 2) ]
+        pb, z = testcase2(p, q, r)
+
+        zfinal = solve(pb, z)
+
+        epsilon = 1e-10
+        @test mu(zfinal) < 1e-10
+        
+        @test get_primfeaserr(pb, zfinal) < epsilon
+        @test get_dualfeaserr(pb, zfinal) < epsilon
+        @test dot(zfinal.x, zfinal.s) < epsilon
+    end
+end

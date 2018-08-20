@@ -1,15 +1,16 @@
-export test_case_1a, test_case_1a_point, test_case_1b, test_case_1c
-export test_case_1abis, test_case_1ater
+export testcase1a, testcase1a_point, testcase1b, testcase1c
+export testcase1abis, testcase1ater
+export testcase2
 
 # Test case 1.a
-function test_case_1a_point()
+function testcase1a_point()
 
     # ptxmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
     # ptxmat = [Matrix{Float64}(I, 3, 3)]
     x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
 end
 
-function test_case_1a()
+function testcase1a()
     cmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
     c = PointE(cmat, Vector{Float64}())
 
@@ -41,7 +42,7 @@ function test_case_1a()
     return problem, PointPrimalDual(x, y, s)
 end
 
-function test_case_1abis()
+function testcase1abis()
     cmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
     c = PointE(cmat, Vector{Float64}())
 
@@ -69,7 +70,7 @@ function test_case_1abis()
     return problem, PointPrimalDual(x, y, s)
 end
 
-function test_case_1ater()
+function testcase1ater()
     cmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
     c = PointE(cmat, Vector{Float64}())
 
@@ -98,7 +99,7 @@ function test_case_1ater()
 end
 
 
-function test_case_1b()
+function testcase1b()
     c = PointE(Dense{Float64}[], Float64[1., 1.])
     
     A = [PointE(Dense{Float64}[], Float64[1., 2.])]
@@ -112,7 +113,7 @@ function test_case_1b()
     return problem, PointPrimalDual(x, y, s)
 end
 
-function test_case_1c()
+function testcase1c()
     cmat = [sparse(1.0I, 3, 3), sparse(1.0I, 3, 3)]
     c = PointE(cmat, Float64[1., 1.])
 
@@ -144,4 +145,45 @@ function test_case_1c()
     s = c - evaluate(A, y)
 
     return problem, PointPrimalDual(x, y, s)
+end
+
+function testcase2(p, q, r)
+    Bis = Vector{Matrix}(undef, p)
+
+    for i=1:p
+        Bis[i] = rand(r, q)
+    end
+    B0 = rand(r, q)
+
+    cmat = spzeros(r+q, r+q)
+    for i=1:r, j=1:q
+        cmat[j+q, i] = B0[i, j]
+    end
+    c = PointE([cmat], Float64[])
+
+    A = PointE{Float64, Sparse{Float64}}[]
+    b = Float64[]
+    
+    push!(A, PointE([sparse(-1.0I, r+q, r+q)], Float64[]))
+    push!(b, -1.)
+    
+    for (i, Bi) in enumerate(Bis)
+        aimat = spzeros(r+q, r+q)
+        for i=1:r, j=1:q
+            aimat[j+q, i] = Bi[i, j]
+        end
+        push!(A, PointE([aimat], Float64[]))
+        push!(b, 0.)
+    end
+
+    problem = SDCOContext(c, A, b)
+
+    y = zeros(p+1)
+    y[1] = norm(B0) + 1
+    x = PointE([1/(q+r) * Matrix(1.0I, q+r, q+r)], Float64[])
+    s = c - evaluate(A, y)
+    
+    z = PointPrimalDual(x, y, s)
+
+    return problem, z
 end

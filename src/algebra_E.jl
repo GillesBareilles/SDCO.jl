@@ -63,9 +63,9 @@ function add!(x::PointE{T, U}, y::PointE{T, U}) where {T<:Number, U}
     nothing
 end
 
-function add!(x::PointE{T, Dense{T}}, y::PointE{T, Sparse{T}}) where {T<:Number, U}
+function add!(x::PointE{T, Dense{T}}, y::PointE{T, Sparse{T}}) where {T<:Number}
     for (i, mat) in enumerate(y.mats)
-        x.mats[i] += Matrix(mat)
+        x.mats[i] += Symmetric(mat, :L)
     end
 
     for (i, yi) in enumerate(y.vec)
@@ -89,7 +89,7 @@ function add(x::PointE{T, Sparse{T}}, y::PointE{T, Dense{T}}) where {T<:Number}
     res = PointE(x.dims, length(x.vec), T, Dense{T})
 
     for i=1:length(x.dims)
-        res.mats[i] = Matrix(Symmetric(x.mats[i])) + y.mats[i]
+        res.mats[i] = Matrix(Symmetric(x.mats[i], :L)) + y.mats[i]
     end
 
     res.vec .= x.vec .+ y.vec
@@ -205,6 +205,42 @@ function hadamard(x::PointE{T, Dense{T}}, y::PointE{T, Dense{T}}, z::PointE{T, D
 end
 
 
+function hadamard!(x::PointE{T, Dense{T}}, y::PointE{T, Sparse{T}}, z::PointE{T, Dense{T}}, out::PointE{T, Dense{T}}; transposefirst=false) where T<:Number
+    if transposefirst
+        for n=1:length(x.dims)
+            out.mats[n] = transpose(x.mats[n])
+            out.mats[n] *= Symmetric(y.mats[n], :L)
+            out.mats[n] *= z.mats[n]
+        end
+    else
+        for n=1:length(x.dims)
+            out.mats[n] = x.mats[n] * y.mats[n] * z.mats[n]
+        end
+    end
+
+    out.vec = x.vec .* y.vec .* z.vec
+
+    nothing
+end
+
+function hadamard!(x::PointE{T, Dense{T}}, y::PointE{T, Dense{T}}, z::PointE{T, Dense{T}}, out::PointE{T, Dense{T}}; transposefirst=false) where T<:Number
+    if transposefirst
+        for n=1:length(x.dims)
+            out.mats[n] = transpose(x.mats[n])
+            out.mats[n] *= y.mats[n]
+            out.mats[n] *= z.mats[n]
+        end
+    else
+        for n=1:length(x.dims)
+            out.mats[n] = x.mats[n] * y.mats[n] * z.mats[n]
+        end
+    end
+
+    out.vec = x.vec .* y.vec .* z.vec
+
+    nothing
+end
+
 #####################################################################"
 ## Point Primal Dual
 #####################################################################"
@@ -212,7 +248,14 @@ function add(z1::PointPrimalDual, z2::PointPrimalDual)
     return PointPrimalDual(z1.x+z2.x, z1.y+z2.y, z1.s+z2.s)
 end
 
+function add!(z1::PointPrimalDual, z2::PointPrimalDual)
+    add!(z1.x, z2.x)
+    z1.y += z2.y
+    add!(z1.s, z2.s)
+end
+
 +(z1::PointPrimalDual, z2::PointPrimalDual) = add(z1, z2)
+-(z1::PointPrimalDual, z2::PointPrimalDual) = add(z1, -z2)
 
 function product(z::PointPrimalDual{T}, lambda::U) where {T<:Number, U<:Number}
     return PointPrimalDual(z.x * convert(T, lambda), z.y * convert(T, lambda), z.s * convert(T, lambda))
@@ -220,6 +263,14 @@ end
 
 *(z::PointPrimalDual, lambda::T) where T<:Number = product(z, lambda)
 *(lambda::T, z::PointPrimalDual) where T<:Number = product(z, lambda)
+
+function -(z::PointPrimalDual{T}) where T<:Number
+    return product(z, convert(T, -1))
+end
+
+function norm(z::PointPrimalDual)
+    return norm(z.x) + norm(z.y) + norm(z.s)
+end
 
 #####################################################################"
 ## transpose

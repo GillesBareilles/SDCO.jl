@@ -37,6 +37,15 @@ function show(io::IO, pt::PointE)
     display(pt.vec)
 end
 
+function show(io::IO, z::PointPrimalDual)
+    println(io, "   * Primal space - x:")
+    display(z.x)
+    println(io, "   * Dual space - y:")
+    display(z.y)
+    println(io, "   * Dual space - s:")
+    display(z.s)
+end
+
 function print_pointsummary(pb::SDCOContext, z::PointPrimalDual)
     println("Primal / dual obj      :    ", get_primobj(pb, z), " / ", get_dualobj(pb, z))
     println("Primal feasability err :    ", get_primfeaserr(pb, z))

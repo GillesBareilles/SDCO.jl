@@ -11,7 +11,8 @@ include("input.jl")
 include("io.jl")
 
 include("NT.jl")
+include("predcorr.jl")
 
 include("test_cases.jl")
 
-end # module
+end

@@ -1,30 +1,103 @@
-export NesterovToddstep, NTget_g, NTget_w, NTget_M
-export NTpredcorr
+export NTget_g, NTget_w, NTget_M
+export NesterovToddstep, NTpredcorr, NTgetcentralpathpoint
 
 get_nc(z::PointPrimalDual) = get_nc(z.x)
-get_nc(x::  PointE) = sum(x.dims) + length(x.vec)
+get_nc(x::PointE) = sum(x.dims) + length(x.vec)
 
 mu(z::PointPrimalDual) = dot(z.x, z.s) / (get_nc(z))
 
 function delta(pb::SDCOContext, z::PointPrimalDual)
-    g = NTget_g(pb, z.x, z.s)
+    g = NTget_g(pb, z.x, z.s, check=true)
     mu_z = mu(z)
 
     return 0.5 * norm(hadamard(g, sqrt(mu_z)*inv(z.x) - 1/sqrt(mu_z) * z.s, g, transposefirst=true))
 end
 
+function phi_mu(z::PointPrimalDual, mu::Float64)
+    for i in eachindex(z.x.mats)
+        if (eigmin(z.x.mats[i]) <= 0) || (eigmin(z.s.mats[i]) <= 0)
+            return Inf
+        end
+    end
+
+    for i in eachindex(z.x.vec)
+        if (z.x.vec[i] <= 0) || (z.s.vec[i] <= 0)
+            return Inf
+        end
+    end
+
+    return dot(z.x, z.s) + mu * psi(hadamard(z.x, z.s))
+end
+
+function psi(x::PointE)
+    res = 0
+
+    for mat in x.mats
+        res += -logdet(mat)
+    end
+
+
+    for xi in x.vec
+        res += -log(xi)
+    end
+    return res
+end
+
+function NTgetcentralpathpoint(pb::SDCOContext, z0::PointPrimalDual{T, Dense{T}}) where T<:Number
+    theta = 1/3
+    tau = 0.99
+    omega = 1e-4
+    
+    z = z0
+    
+    printstyled("\n---delta(pb, z) = $(delta(pb, z))\n", color = :light_cyan)
+
+    it = 0
+    while (delta(pb, z) > theta) && (it < 20)
+        printstyled("\n--------- Iteration i = $it\n", color = :light_cyan)
+        printstyled("--- delta(pb, z) = $(delta(pb, z))\n", color = :light_cyan)
+
+        mu_z = mu(z)
+        dc = NesterovToddstep(pb, z, mu_z)
+
+        println("-- ", delta(pb, z), " < ", sqrt( (2*tau^2) / (1+2*tau^2) ))
+        if delta(pb, z) < sqrt( (2*tau^2) / (1+2*tau^2) )
+            alpha = 1
+        else
+            i = 0
+            alpha = 2^(-i)
+
+            while phi_mu(z+alpha*dc, mu_z) > (phi_mu(z, mu_z) - 4*omega*mu_z*alpha*delta(pb, z)^2)
+
+                i += 1
+
+                (i > 100) && error("i = $i...")
+            end
+        end
+        @show alpha
+
+        z = z+alpha * dc
+
+        it += 1
+
+    end
+
+    printstyled("\n--- delta(pb, z) = $(delta(pb, z))\n", color = :green)
+
+    return z
+end
 
 function NTpredcorr(pb::SDCOContext, z::PointPrimalDual{T, Dense{T}}) where T<:Number
-
     z_curr = z
     epsilon = 1e-15
+    maxit = 20
     i = 0
 
     nc = get_nc(z.x)
     K = ceil((1 + sqrt(1+ 13*nc/2)) * log(mu(z) / epsilon))
     @show K
 
-    while (i < 20) && (mu(z) > epsilon)
+    while (i < maxit) && (mu(z) > epsilon)
         printstyled("\n--------- Iteration i = $i\n", color = :light_cyan)
         printstyled("Starting point - central point:             ", mu(z), "\n", color=:light_cyan)
         printstyled("Starting point - distance to central path:  ", delta(pb, z), "\n", color=:light_cyan)
@@ -74,18 +147,6 @@ function NesterovToddstep(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, m
     sinv = inv(z.s)
     muxs = z.x - product(sinv, mu)
 
-    # if 1 == 0
-    #     sqrtx = sqrt(z.x)
-    #     t = hadamard(sqrtx, z.s, sqrtx)
-    #     t = sqrt(inv(t))
-    #     printstyled("|| w - its def || = ", norm(w - hadamard(sqrtx, t, sqrtx)), "\n", color=:light_red)
-
-    #     display(hadamard(sqrtx, t, sqrtx))
-    #     display(w)
-    #     w = hadamard(sqrtx, t, sqrtx)
-    # end
-
-
     # Step 2. Solve M.dy = A(x - \mu inv(s))
     M = NTget_M(pb, g)
     rhs = evaluate(pb.A, muxs)
@@ -122,13 +183,38 @@ end
 
 
 
-function NTget_g(pb::SDCOContext, x::PointE{T, Dense{T}}, s::PointE{T, Dense{T}}) where T<:Number
+
+function NesterovToddstep!(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, mu::Float64, d::PointPrimalDual) where T<:Number
+    # Step 1. Compute necessary quatities
+    g = NTget_g(pb, z.x, z.s)
+    w = NTget_w(pb, g)
+
+    muxs = z.x - product(inv(z.s), mu)
+
+    # Step 2. Solve M.dy = A(x - \mu inv(s))
+    M = NTget_M(pb, g)
+    rhs = evaluate(pb.A, muxs)
+
+    # Choleski fact, solve
+    d.y = cholesky(M) \ rhs
+
+    # Step 3. 
+    d.s = - evaluate(pb.A, d.y)
+
+    d.x = - muxs - hadamard(w, d.s, w)
+
+    nothing
+end
+
+
+
+function NTget_g(pb::SDCOContext, x::PointE{T, Dense{T}}, s::PointE{T, Dense{T}}; check=true) where T<:Number
     mats = Vector{Dense{T}}([zeros(T, n, n) for n in x.dims])
 
     ## Deal with SDP part
     for j in eachindex(x.mats)
-        xj_fact = LinearAlgebra.cholesky(Symmetric(x.mats[j]))
-        sj_fact = LinearAlgebra.cholesky(Symmetric(s.mats[j]))
+        xj_fact = LinearAlgebra.cholesky(Symmetric(x.mats[j]), check=check)
+        sj_fact = LinearAlgebra.cholesky(Symmetric(s.mats[j]), check=check)
 
         svd_xs = svd(sj_fact.U * xj_fact.L)
 
@@ -160,9 +246,9 @@ function NTget_M(pb::SDCOContext, g::PointE{T}) where T<:Number
     m = pb.m
     M = zeros(m, m)
 
-    vectors = Vector{PointE{T, Dense{T}}}(undef, pb.m)
+    vectors = [PointE(g.dims, length(g.vec), T, Dense{T}) for i=1:m]    
     for i=1:m
-        vectors[i] = hadamard(g, pb.A[i], g, transposefirst = true)
+        hadamard!(g, pb.A[i], g, vectors[i], transposefirst = true)
     end
 
     for i=1:m, j=1:m

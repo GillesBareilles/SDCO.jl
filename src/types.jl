@@ -86,6 +86,10 @@ mutable struct PointPrimalDual{T, U}
     s::PointE{T, U}
 end
 
+function PointPrimalDual(dims::AbstractArray{Int}, vecdim::Int, m::Int, T::DataType, U::DataType)
+    return PointPrimalDual(PointE(mats, vec, dims), zeros(T, m), PointE(mats, vec, dims))
+end
+
 
 mutable struct SDCOContext{T, U}
     c::PointE{T, U}                 # Objective: linear part
