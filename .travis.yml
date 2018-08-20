@@ -1,7 +1,7 @@
 language: julia
 os:
     - linux
-    - osx
+    # - osx
 julia:
     - 0.7
     - 1.0
@@ -16,10 +16,9 @@ sudo: false
 script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
     # - julia --color=yes -e 'if VERSION >= v"0.7.0-" using Pkg; end; Pkg.clone(pwd()); Pkg.test("SDCO"; coverage=true)';
-    - julia --color=yes -e "VERSION >= v\"0.7.0-DEV.5183\" && using Pkg; Pkg.clone(pwd()); Pkg.test("SDCO"; coverage=true)"
-
+    - julia --color=yes -e "using Pkg; Pkg.build(); Pkg.test()"
 after_success:
     - echo $TRAVIS_JULIA_VERSION
-    - julia --color=yes -e 'if VERSION >= v"0.7.0-" using Pkg; Pkg.add("Coverage"); cd(Pkg.dir("SDCO")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
+    - julia --color=yes -e 'using Pkg; Pkg.add("Coverage"); cd(Pkg.dir("SDCO")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
     # - julia -e 'Pkg.add("Documenter")'
     # - julia -e 'cd(Pkg.dir("JuMP")); include(joinpath("docs", "make.jl"))'
