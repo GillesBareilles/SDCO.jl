@@ -7,14 +7,9 @@ julia:
 notifications:
     email: false
 sudo: false
-# addons:
-#     apt_packages:
-#         - gfortran
-#         - liblapack-dev
-#         - libblas-dev
 script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
     - julia --color=yes -e "using Pkg; Pkg.build(); Pkg.test()"
 after_success:
     - echo $TRAVIS_JULIA_VERSION
-    - julia --color=yes -e 'using Pkg; Pkg.add("Coverage"); import SDCO; cd(joinpath(dirname(pathof(SDCO)), "..")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
+    - julia --color=yes -e 'using Pkg; Pkg.add("Coverage"); import SDCO; cd(joinpath(dirname(pathof(SDCO)), "..")); println("Current location is ", pwd()); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
