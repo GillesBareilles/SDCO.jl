@@ -15,10 +15,9 @@ sudo: false
 #         - libblas-dev
 script:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-    - julia -e 'add SDCO'
-    - julia -e 'Pkg.test("SDCO", coverage=true)'
+    - julia --color=yes -e 'if VERSION >= v"0.7.0-" using Pkg; end; Pkg.clone(pwd()); Pkg.test("SDCO"; coverage=true)';
 after_success:
     - echo $TRAVIS_JULIA_VERSION
-    - julia -e 'Pkg.add("Coverage"); cd(Pkg.dir("SDCO")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
+    - julia --color=yes -e 'if VERSION >= v"0.7.0-" using Pkg; Pkg.add("Coverage"); cd(Pkg.dir("SDCO")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
     # - julia -e 'Pkg.add("Documenter")'
     # - julia -e 'cd(Pkg.dir("JuMP")); include(joinpath("docs", "make.jl"))'
