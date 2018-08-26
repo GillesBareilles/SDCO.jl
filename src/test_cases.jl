@@ -28,7 +28,7 @@ function testcase1a()
     b = Vector{Float64}([1, 1, 1])
 
     problem = SDCOContext(c, A, b)
-    
+
     # ptxmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
     # x = PointE(ptxmat, Vector{Float64}())
     x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
@@ -60,11 +60,11 @@ function testcase1abis()
     b = Vector{Float64}([1, 1, 1])
 
     problem = SDCOContext(c, A, b)
-    
+
     x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
 
     y = ones(Float64, length(b)) * -1 * (1+sqrt(17)) / 4
-    
+
     s = c - evaluate(A, y)
 
     return problem, PointPrimalDual(x, y, s)
@@ -88,11 +88,11 @@ function testcase1ater()
     b = Vector{Float64}([1, 1, 1])
 
     problem = SDCOContext(c, A, b)
-    
+
     x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
 
     y = Float64[0, -1, -0.5]
-    
+
     s = c - evaluate(A, y)
 
     return problem, PointPrimalDual(x, y, s)
@@ -101,7 +101,7 @@ end
 
 function testcase1b()
     c = PointE(Dense{Float64}[], Float64[1., 1.])
-    
+
     A = [PointE(Dense{Float64}[], Float64[1., 2.])]
     b = [1.]
 
@@ -151,26 +151,26 @@ function testcase2(p, q, r)
     Bis = Vector{Matrix}(undef, p)
 
     for i=1:p
-        Bis[i] = rand(r, q)
+        Bis[i] = rand(q, r)
     end
-    B0 = rand(r, q)
+    B0 = rand(q, r)
 
-    cmat = spzeros(r+q, r+q)
+    cmat = spzeros(q+r, q+r)
     for i=1:r, j=1:q
-        cmat[j+q, i] = B0[i, j]
+        cmat[q+i, j] = B0[j, i]
     end
     c = PointE([cmat], Float64[])
 
     A = PointE{Float64, Sparse{Float64}}[]
     b = Float64[]
-    
-    push!(A, PointE([sparse(-1.0I, r+q, r+q)], Float64[]))
+
+    push!(A, PointE([sparse(-1.0I, q+r, q+r)], Float64[]))
     push!(b, -1.)
-    
+
     for (i, Bi) in enumerate(Bis)
-        aimat = spzeros(r+q, r+q)
+        aimat = spzeros(q+r, q+r)
         for i=1:r, j=1:q
-            aimat[j+q, i] = Bi[i, j]
+            aimat[q+i, j] = Bi[j, i]
         end
         push!(A, PointE([aimat], Float64[]))
         push!(b, 0.)
@@ -182,7 +182,7 @@ function testcase2(p, q, r)
     y[1] = norm(B0) + 1
     x = PointE([1/(q+r) * Matrix(1.0I, q+r, q+r)], Float64[])
     s = c - evaluate(A, y)
-    
+
     z = PointPrimalDual(x, y, s)
 
     return problem, z

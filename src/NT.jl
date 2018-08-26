@@ -47,9 +47,9 @@ function NTgetcentralpathpoint(pb::SDCOContext, z0::PointPrimalDual{T, Dense{T}}
     theta = 1/3
     tau = 0.99
     omega = 1e-4
-    
+
     z = z0
-    
+
     printstyled("\n---delta(pb, z) = $(delta(pb, z))\n", color = :light_cyan)
 
     it = 0
@@ -119,8 +119,8 @@ function NTpredcorr(pb::SDCOContext, z::PointPrimalDual{T, Dense{T}}) where T<:N
 
         println("alpha = ", alpha)
         printstyled("mu(z) - mu(zc) : ", abs(mu(z) - mu(zc)), "\n", color=:red)
-        
-        
+
+
         z = zc + alpha*da
         printstyled("mu(z+) / mu(zc) - (1 - alpha): ", abs(mu(z) / mu(zc) - (1-alpha)), "\n", color=:red)
 
@@ -140,7 +140,7 @@ function NesterovToddstep(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, m
     printAll = 0
 
     (printAll >= 1) && println(io, "------ NesterovToddstep ------")
-    
+
     # Step 1. Compute necessary quatities
     g = NTget_g(pb, z.x, z.s)
     w = NTget_w(pb, g)
@@ -154,7 +154,7 @@ function NesterovToddstep(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, m
     # Choleski fact, solve
     dy = cholesky(M) \ rhs
 
-    # Step 3. 
+    # Step 3.
     ds = - evaluate(pb.A, dy)
 
     dx = - muxs - hadamard(w, ds, w)
@@ -198,7 +198,7 @@ function NesterovToddstep!(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, 
     # Choleski fact, solve
     d.y = cholesky(M) \ rhs
 
-    # Step 3. 
+    # Step 3.
     d.s = - evaluate(pb.A, d.y)
 
     d.x = - muxs - hadamard(w, d.s, w)
@@ -223,7 +223,7 @@ function NTget_g(pb::SDCOContext, x::PointE{T, Dense{T}}, s::PointE{T, Dense{T}}
 
     ## Vectorial part
     vec = sqrt.( sqrt.(x.vec) ./ sqrt.(s.vec) )
-    
+
     return PointE(mats, vec)
 end
 
@@ -246,7 +246,7 @@ function NTget_M(pb::SDCOContext, g::PointE{T}) where T<:Number
     m = pb.m
     M = zeros(m, m)
 
-    vectors = [PointE(g.dims, length(g.vec), T, Dense{T}) for i=1:m]    
+    vectors = [PointE(g.dims, length(g.vec), T, Dense{T}) for i=1:m]
     for i=1:m
         hadamard!(g, pb.A[i], g, vectors[i], transposefirst = true)
     end
