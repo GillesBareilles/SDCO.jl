@@ -43,24 +43,24 @@ function psi(x::PointE)
     return res
 end
 
-function NTgetcentralpathpoint(pb::SDCOContext, z0::PointPrimalDual{T, Dense{T}}) where T<:Number
+function NTgetcentralpathpoint(pb::SDCOContext, z0::PointPrimalDual{T, Dense{T}}; outlev=1) where T<:Number
     theta = 1/3
     tau = 0.99
     omega = 1e-4
 
     z = z0
 
-    printstyled("\n---delta(pb, z) = $(delta(pb, z))\n", color = :light_cyan)
+    (outlev>0) && printstyled("\n---delta(pb, z) = $(delta(pb, z))\n", color = :light_cyan)
 
     it = 0
     while (delta(pb, z) > theta) && (it < 20)
-        printstyled("\n--------- Iteration i = $it\n", color = :light_cyan)
-        printstyled("--- delta(pb, z) = $(delta(pb, z))\n", color = :light_cyan)
+        (outlev>0) && printstyled("\n--------- Iteration i = $it\n", color = :light_cyan)
+        (outlev>0) && printstyled("--- delta(pb, z) = $(delta(pb, z))\n", color = :light_cyan)
 
         mu_z = mu(z)
         dc = NesterovToddstep(pb, z, mu_z)
 
-        println("-- ", delta(pb, z), " < ", sqrt( (2*tau^2) / (1+2*tau^2) ))
+        (outlev>1) && println("-- ", delta(pb, z), " < ", sqrt( (2*tau^2) / (1+2*tau^2) ))
         if delta(pb, z) < sqrt( (2*tau^2) / (1+2*tau^2) )
             alpha = 1
         else
@@ -74,7 +74,7 @@ function NTgetcentralpathpoint(pb::SDCOContext, z0::PointPrimalDual{T, Dense{T}}
                 (i > 100) && error("i = $i...")
             end
         end
-        @show alpha
+        (outlev > 1) && @show alpha
 
         z = z+alpha * dc
 
@@ -82,12 +82,12 @@ function NTgetcentralpathpoint(pb::SDCOContext, z0::PointPrimalDual{T, Dense{T}}
 
     end
 
-    printstyled("\n--- delta(pb, z) = $(delta(pb, z))\n", color = :green)
+    (outlev>0) && printstyled("\n--- delta(pb, z) = $(delta(pb, z))\n", color = :green)
 
     return z
 end
 
-function NTpredcorr(pb::SDCOContext, z::PointPrimalDual{T, Dense{T}}) where T<:Number
+function NTpredcorr(pb::SDCOContext, z::PointPrimalDual{T, Dense{T}}; outlev = 1) where T<:Number
     z_curr = z
     epsilon = 1e-15
     maxit = 20
@@ -98,10 +98,11 @@ function NTpredcorr(pb::SDCOContext, z::PointPrimalDual{T, Dense{T}}) where T<:N
     @show K
 
     while (i < maxit) && (mu(z) > epsilon)
-        printstyled("\n--------- Iteration i = $i\n", color = :light_cyan)
-        printstyled("Starting point - central point:             ", mu(z), "\n", color=:light_cyan)
-        printstyled("Starting point - distance to central path:  ", delta(pb, z), "\n", color=:light_cyan)
-        # print_pointsummary(pb, z)
+        if outlev > 0
+            printstyled("\n--------- Iteration i = $i\n", color = :light_cyan)
+            printstyled("Starting point - central point:             ", mu(z), "\n", color=:light_cyan)
+            printstyled("Starting point - distance to central path:  ", delta(pb, z), "\n", color=:light_cyan)
+        end
 
         # centering step
         mu_z = mu(z)
@@ -109,37 +110,37 @@ function NTpredcorr(pb::SDCOContext, z::PointPrimalDual{T, Dense{T}}) where T<:N
 
         zc = z + dc
 
-        printstyled("\nCentered step - central point:              ", mu(zc), "\n", color=:light_cyan)
-        printstyled("Centered step - distance to central path:   ", delta(pb, zc), "\n", color=:light_cyan)
+        if outlev > 0
+            printstyled("\nCentered step - central point:              ", mu(zc), "\n", color=:light_cyan)
+            printstyled("Centered step - distance to central path:   ", delta(pb, zc), "\n", color=:light_cyan)
+        end
 
         # affine step
         da = NesterovToddstep(pb, zc, 0.)
 
         alpha = NT_getalpha(pb, zc, da)
 
-        println("alpha = ", alpha)
-        printstyled("mu(z) - mu(zc) : ", abs(mu(z) - mu(zc)), "\n", color=:red)
+        (outlev > 0) && println("alpha = ", alpha)
+        (outlev > 1) && printstyled("mu(z) - mu(zc) : ", abs(mu(z) - mu(zc)), "\n", color=:red)
 
 
         z = zc + alpha*da
-        printstyled("mu(z+) / mu(zc) - (1 - alpha): ", abs(mu(z) / mu(zc) - (1-alpha)), "\n", color=:red)
+        (outlev > 1) && printstyled("mu(z+) / mu(zc) - (1 - alpha): ", abs(mu(z) / mu(zc) - (1-alpha)), "\n", color=:red)
 
         i+=1
     end
 
     @show mu(z_curr), K
-    printstyled("\n\nDone, mu = $(mu(z))\n\n", color=:green)
-    print_pointsummary(pb, z)
+    (outlev > 0) && printstyled("\n\nDone, mu = $(mu(z))\n\n", color=:green)
+    (outlev > 1) && print_pointsummary(pb, z)
 
     return z
 end
 
-function NesterovToddstep(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, mu::Float64) where T<:Number
-
+function NesterovToddstep(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, mu::Float64; outlev=0) where T<:Number
     io = stdout
-    printAll = 0
 
-    (printAll >= 1) && println(io, "------ NesterovToddstep ------")
+    (outlev >= 1) && println(io, "------ NesterovToddstep ------")
 
     # Step 1. Compute necessary quatities
     g = NTget_g(pb, z.x, z.s)
@@ -164,7 +165,7 @@ function NesterovToddstep(pb::SDCOContext{T}, z::PointPrimalDual{T, Dense{T}}, m
     ystep = z.y+dy
     sstep = z.s+ds
 
-    if printAll >= 1
+    if outlev >= 1
         @printf("||A*(dy) + ds||                    = %.3e\n", norm(evaluate(pb.A, dy) + ds))
         @printf("||A(dx)||                          = %.3e\n", norm(evaluate(pb.A, dx)))
         @printf("||dx + w.ds.w - mu inv(s) + x||    = %.3e\n", norm(dx + hadamard(w, ds, w) - mu * inv(z.s) + z.x))

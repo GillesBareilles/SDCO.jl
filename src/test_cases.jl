@@ -4,23 +4,26 @@ export testcase2
 
 # Test case 1.a
 function testcase1a_point()
-
-    # ptxmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
-    # ptxmat = [Matrix{Float64}(I, 3, 3)]
     x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
 end
 
-function testcase1a()
-    cmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
+function testcase1a(; symmetric=false)
+    if symmetric
+        cmat = [Symmetric(sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.]))]
+        a1mats = [Symmetric(sparse([1], [1], [1.], 3, 3), :L)]
+        a2mats = [Symmetric(sparse([2, 3], [2, 1], [1., 1.], 3, 3), :L)]
+        a3mats = [Symmetric(sparse([2, 3], [1, 3], [1., 1.], 3, 3), :L)]
+    else
+        cmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
+        a1mats = [sparse([1], [1], [1.], 3, 3)]
+        a2mats = [sparse([1, 2, 3], [3, 2, 1], [1., 1., 1.], 3, 3)]
+        a3mats = [sparse([1, 2, 3], [2, 1, 3], [1., 1., 1.], 3, 3)]
+    end
+
+
     c = PointE(cmat, Vector{Float64}())
-
-    a1mats = [sparse([1], [1], [1.], 3, 3)]
     a1 = PointE(a1mats, Vector{Float64}())
-
-    a2mats = [sparse([2, 3], [2, 1], [1., 1.], 3, 3)]
     a2 = PointE(a2mats, Vector{Float64}())
-
-    a3mats = [sparse([2, 3], [1, 3], [1., 1.], 3, 3)]
     a3 = PointE(a3mats, Vector{Float64}())
 
     A = [a1, a2, a3]
@@ -29,14 +32,8 @@ function testcase1a()
 
     problem = SDCOContext(c, A, b)
 
-    # ptxmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
-    # x = PointE(ptxmat, Vector{Float64}())
     x = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
-
-    # ptsmat = [sparse([1, 2, 3], [1, 2, 3], [1., 1., 1.])]
-    # s = PointE(ptsmat, Vector{Float64}())
     s = PointE([Matrix{Float64}(I, 3, 3)], Float64[])
-
     y = zeros(Float64, length(b))
 
     return problem, PointPrimalDual(x, y, s)
@@ -113,14 +110,24 @@ function testcase1b()
     return problem, PointPrimalDual(x, y, s)
 end
 
-function testcase1c()
-    cmat = [sparse(1.0I, 3, 3), sparse(1.0I, 3, 3)]
-    c = PointE(cmat, Float64[1., 1.])
+function testcase1c(; symmetric=false)
+    if symmetric
+        cmat = [Symmetric(sparse(1.0I, 3, 3), :L), Symmetric(sparse(1.0I, 3, 3), :L)]
 
-    mat1 = sparse([1], [1], [1.], 3, 3)
-    mat2 = sparse([2, 3], [2, 1], [1., 1.], 3, 3)
-    mat3 = sparse([2, 3], [1, 3], [1., 1.], 3, 3)
-    matnull = spzeros(3,3)
+        mat1 = Symmetric(sparse([1], [1], [1.], 3, 3), :L)
+        mat2 = Symmetric(sparse([2, 3], [2, 1], [1., 1.], 3, 3), :L)
+        mat3 = Symmetric(sparse([2, 3], [1, 3], [1., 1.], 3, 3), :L)
+        matnull = Symmetric(spzeros(3,3), :L)
+    else
+        cmat = [sparse(1.0I, 3, 3), sparse(1.0I, 3, 3)]
+
+        mat1 = sparse([1], [1], [1.], 3, 3)
+        mat2 = sparse([1, 2, 3], [3, 2, 1], [1., 1., 1.], 3, 3)
+        mat3 = sparse([1, 2, 3], [2, 1, 3], [1., 1., 1.], 3, 3)
+        matnull = spzeros(3,3)
+    end
+
+    c = PointE(cmat, Float64[1., 1.])
 
     a1 = PointE([mat1, matnull], Float64[0, 0])
     a2 = PointE([mat2, matnull], Float64[0, 0])
@@ -147,32 +154,54 @@ function testcase1c()
     return problem, PointPrimalDual(x, y, s)
 end
 
-function testcase2(p, q, r)
-    Bis = Vector{Matrix}(undef, p)
+function testcase2(p, q, r; storage=:sparsesym)
 
-    for i=1:p
-        Bis[i] = rand(q, r)
-    end
+    ## Objective
     B0 = rand(q, r)
 
-    cmat = spzeros(q+r, q+r)
-    for i=1:r, j=1:q
-        cmat[q+i, j] = B0[j, i]
+    cmat::Sparse{Float64} = spzeros(q+r, q+r)
+    if storage == :sparsesym
+        for i=1:r, j=1:q
+            cmat[q+i, j] = B0[j, i]
+        end
+        c = PointE([Symmetric(cmat, :L)], Float64[])
+    elseif storage == :sparsefull
+        for i=1:r, j=1:q
+            cmat[q+i, j] = B0[j, i]
+            cmat[j, i+q] = B0[j, i]
+        end
+        c = PointE([cmat], Float64[])
     end
-    c = PointE([cmat], Float64[])
 
-    A = PointE{Float64, Sparse{Float64}}[]
+    if storage == :sparsesym
+        A = PointE{Float64, SparseSym{Float64}}[]
+    elseif storage == :sparsefull
+        A = PointE{Float64, Sparse{Float64}}[]
+    end
     b = Float64[]
 
-    push!(A, PointE([sparse(-1.0I, q+r, q+r)], Float64[]))
+    if storage == :sparsesym
+        push!(A, PointE([Symmetric(sparse(-1.0I, q+r, q+r), :L)], Float64[]))
+    elseif storage == :sparsefull
+        push!(A, PointE([sparse(-1.0I, q+r, q+r)], Float64[]))
+    end
     push!(b, -1.)
 
-    for (i, Bi) in enumerate(Bis)
+    for ctrind=1:p
         aimat = spzeros(q+r, q+r)
-        for i=1:r, j=1:q
-            aimat[q+i, j] = Bi[j, i]
+        Bi = rand(q, r)
+        if storage == :sparsesym
+            for i=1:r, j=1:q
+                aimat[q+i, j] = Bi[j, i]
+            end
+            push!(A, PointE([Symmetric(aimat, :L)], Float64[]))
+        elseif storage == :sparsefull
+            for i=1:r, j=1:q
+                aimat[q+i, j] = Bi[j, i]
+                aimat[j, q+i] = Bi[j, i]
+            end
+            push!(A, PointE([aimat], Float64[]))
         end
-        push!(A, PointE([aimat], Float64[]))
         push!(b, 0.)
     end
 

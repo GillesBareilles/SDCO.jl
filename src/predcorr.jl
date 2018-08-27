@@ -15,13 +15,13 @@ function solve(pb::SDCOContext{T}, z0) where T<:Number
     theta = 1/3
     tau = 0.99
     omega = 1e-4
-    
+
     cur_mu = mu(z)
     cur_delta = delta(pb, z)
     it = 0
     alpha = -1
     d = NesterovToddstep(pb, z, 0.)
-    
+
     print_header(stdout)
     print_it(stdout, it, -1, -1, cur_mu, cur_delta, -1, alpha)
 
@@ -40,22 +40,28 @@ function solve(pb::SDCOContext{T}, z0) where T<:Number
         print_it(stdout, it, -1, -1, cur_mu, cur_delta, alpha, time() - t1)
     end
 
-    
+
     ## Path following section
     println("Following central path...")
-    epsilon = 1e-11
+    epsilon = 5e-10
     maxit = 30
     alphacorr = 0.999
 
     nc = get_nc(z.x)
-    K = ceil((1 + sqrt(1+ 13*nc/2)) * log(mu(z) / epsilon))
+    # K = ceil((1 + sqrt(1+ 13*nc/2)) * log10(mu(z) / epsilon))
+    # @show K
+
+    ε = 5e-10
+    μ = mu(z)
+
+    K = log(ε / μ) / log(1 + 4 / (13*nc) * (1 - sqrt(1+13*nc/2)))
     @show K
 
     while (it < maxit) && (mu(z) > epsilon)
         t1 = time()
 
         res = alpha, cur_mu = NTpredcorr_it!(pb, alphacorr, cur_mu, cur_delta, z, d)
-        
+
         it+=1
 
         cur_mu = mu(z)
@@ -84,6 +90,7 @@ function NTcentering_it!(pb, tau, omega, z, cur_mu, cur_delta)
 
         while phi_mu(z+alpha*dc, mu_z) > (phi_mu(z, mu_z) - 4*omega*mu_z*alpha*delta(pb, z)^2)
             i += 1
+            alpha = (1/2)^(i)
 
             (i > 100) && error("i = $i...")
         end
@@ -92,6 +99,16 @@ function NTcentering_it!(pb, tau, omega, z, cur_mu, cur_delta)
     add!(z, alpha * dc)
 
     return alpha
+end
+
+function symmetrize!(z)
+    for i in 1:length(z.x.mats)
+        z.x.mats[i] = (z.x.mats[i] + transpose(z.x.mats[i]))/2
+    end
+
+    for i in 1:length(z.s.mats)
+        z.s.mats[i] = (z.s.mats[i] + transpose(z.s.mats[i]))/2
+    end
 end
 
 function NTpredcorr_it!(pb, alphacorr, cur_mu, cur_delta, z, d)
@@ -109,9 +126,9 @@ function NTpredcorr_it!(pb, alphacorr, cur_mu, cur_delta, z, d)
     alpha = NT_getalpha(pb, z, d)
 
     printstyled("mu(z) - mu(zc) : ", abs(mu_z - mu_zc), "\n", color=:red)
-    
+
     alphacorr = min(alpha, 0.99999)
-    
+
     add!(z, alphacorr*d)
     mu_za = mu(z)
 

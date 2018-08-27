@@ -7,7 +7,7 @@ export min, mu, delta
 export issol
 
 
-function evaluate(A::Vector{PointE{T, U}}, x::PointE{T, V}) where {T<:Number, U, V}
+function evaluate(A::Vector{PointE{T, U}}, x::PointE{T}) where {T<:Number, U<:AbstractArray}
     res = zeros(T, length(A))
 
     for (i, ai) in enumerate(A)
@@ -17,7 +17,7 @@ function evaluate(A::Vector{PointE{T, U}}, x::PointE{T, V}) where {T<:Number, U,
     return res
 end
 
-function evaluate(A::Vector{PointE{T, Sparse{T}}}, y::Vector{T}) where T<:Number
+function evaluate(A::Vector{PointE{T, U}}, y::Vector{T}) where {T<:Number, U<:AbstractArray}
     @assert length(A) == length(y)
 
     dims = first(A).dims
@@ -30,18 +30,18 @@ function evaluate(A::Vector{PointE{T, Sparse{T}}}, y::Vector{T}) where T<:Number
     return res
 end
 
-function evaluate(A::Vector{PointE{T, Dense{T}}}, y::Vector{T}; evaltype::DataType=Dense{T}) where T<:Number
-    @assert length(A) == length(y)
-
-    dims = first(A).dims
-    res = PointE(dims, length(first(A).vec), T, evaltype)
-
-    for (i, ai) in enumerate(A)
-        add!(res, product(A[i], y[i]))
-    end
-
-    return res
-end
+# function evaluate(A::Vector{PointE{T}}, y::Vector{T}; evaltype::DataType=Dense{T}) where T<:Number
+#     @assert length(A) == length(y)
+#
+#     dims = first(A).dims
+#     res = PointE(dims, length(first(A).vec), T, evaltype)
+#
+#     for (i, ai) in enumerate(A)
+#         add!(res, product(A[i], y[i]))
+#     end
+#
+#     return res
+# end
 
 function get_primobj(pb::SDCOContext{T}, x::PointE{T}) where T<:Number
     @assert pb.c.dims == x.dims
@@ -56,6 +56,9 @@ function get_dualobj(pb::SDCOContext{T}, y::Vector{T}) where T<:Number
 end
 
 get_dualobj(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_dualobj(pb, z.y)
+
+
+
 
 
 function get_primslacks(pb::SDCOContext{T}, x::PointE{T}) where T<:Number
@@ -73,6 +76,10 @@ end
 
 get_dualslacks(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_dualslacks(pb, z.y, z.s)
 
+
+
+
+
 function get_primfeaserr(pb::SDCOContext{T}, x::PointE{T}) where T<:Number
     return norm(get_primslacks(pb, x))
 end
@@ -84,6 +91,10 @@ function get_dualfeaserr(pb::SDCOContext{T}, y::Vector{T}, s::PointE{T}) where T
 end
 
 get_dualfeaserr(pb::SDCOContext{T}, z::PointPrimalDual{T}) where T<:Number = get_dualfeaserr(pb, z.y, z.s)
+
+
+
+
 
 function min(pb::SDCOContext{T}, x::PointE{T, Dense{T}}) where {T<:Number, U<:Dense}
     minx = Inf
@@ -97,8 +108,4 @@ function min(pb::SDCOContext{T}, x::PointE{T, Dense{T}}) where {T<:Number, U<:De
     end
 
     return minx
-end
-
-function get(pb, z, epsilon = 1e-10)
-    return (get_primfeaserr(pb, z) < epsilon) && (get_dualfeaserr(pb, z) < epsilon) && (dot(z.x, z.s) < epsilon)
 end

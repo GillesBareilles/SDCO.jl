@@ -1,12 +1,17 @@
 import Base.copy
 export PointE, SDCOContext, copy, densify
 
-# const SymMat{T} = SparseMatrixCSC{T, Int64}
 
-const Dense{T} = Array{T, 2}
-const Sparse{T} = SparseArrays.SparseMatrixCSC{T,Int64}
+### Matrix types
+const Dense{T} = Array{T, 2} where T<:Number
+const DenseSym{T} = Symmetric{T, Dense{T}} where {T<:Real}
+const DenseHerm{T} = Hermitian{T, Dense{T}} where {T<:Complex}
 
-const SymSparse{T} = Symmetric{T, Sparse{T}}
+const Sparse{T} = SparseArrays.SparseMatrixCSC{T,Int64} where T<:Number
+const SparseSym{T} = Symmetric{T, Sparse{T}} where {T<:Real}
+const SparseHerm{T} = Hermitian{T, Sparse{T}} where {T<:Complex}
+
+# const SymSparse{T} = Symmetric{T, Sparse{T}}
 
 mutable struct PointE{T, U}
     mats::Vector{U}             # Collection of symmetric matrices
@@ -14,47 +19,102 @@ mutable struct PointE{T, U}
     dims::Vector{Int}           # Dimension of the sdp cones
 end
 
-function PointE(mats::Vector{Sparse{T}}, vec::AbstractArray{T}) where T<:Number
-    dims = map(x->size(x, 1), mats)
 
-    ## Check that sparse underlying matrix is lower triangular.
-    for (ind, mat) in enumerate(mats)
-        rows = SparseArrays.rowvals(mat)
-        m, n = size(mat)
-        for i = 1:n
-            for j in nzrange(mat, i)
-                if rows[j] < i
-                    @error("PointE(): dropping non lower triangular term ($i, $(rows[j])), matrix $ind.")
-                    mat[rows[j], i] = 0
-                end
-            end
-        end
 
-        dropzeros!(mat)
-    end
-
-    return PointE(mats, vec, dims)
-end
-
-function PointE(mats::Vector{Dense{T}}, vec::AbstractArray{T}) where T<:Number
+function PointE(mats::Vector{U}, vec::AbstractArray{T}) where {U<:AbstractMatrix, T<:Number}
     dims = map(x->size(x, 1), mats)
 
     return PointE(mats, vec, dims)
 end
+
+# function PointE(mats::Vector{Sparse{T}}, vec::AbstractArray{T}) where T<:Number
+#     dims = map(x->size(x, 1), mats)
+#
+#     ## Check that sparse underlying matrix is lower triangular.
+#     for (ind, mat) in enumerate(mats)
+#         rows = SparseArrays.rowvals(mat)
+#         m, n = size(mat)
+#         for i = 1:n
+#             for j in nzrange(mat, i)
+#                 if rows[j] < i
+#                     @error("PointE(): dropping non lower triangular term ($i, $(rows[j])), matrix $ind.")
+#                     mat[rows[j], i] = 0
+#                 end
+#             end
+#         end
+#
+#         dropzeros!(mat)
+#     end
+#
+#     return PointE(mats, vec, dims)
+# end
+
+# """
+# version returning a stored symmetric sparse matrix (unefficient storage)
+# """
+# function PointE(mats::Vector{Sparse{T}}, vec::AbstractArray{T}) where T<:Number
+#     dims = map(x->size(x, 1), mats)
+#
+#     ## Check that sparse underlying matrix is lower triangular.
+#     for (ind, mat) in enumerate(mats)
+#         mat += transpose(mat)
+#         # rows = SparseArrays.rowvals(mat)
+#         m, n = size(mat)
+#         # for i = 1:n
+#         #     for j in nzrange(mat, i)
+#         #         if rows[j] < i
+#         #             # @error("PointE(): dropping non lower triangular term ($i, $(rows[j])), matrix $ind.")
+#         #             mat[rows[j], i] = 0
+#         #         end
+#         #
+#         #         if i != rows[j]
+#         #             mat[i, rows[j]] = mat[rows[j], i]
+#         #         end
+#         #     end
+#         # end
+#         for i=1:min(n, m)
+#             if mat[i, i] != 0
+#                 mat[i, i] *= 0.5
+#             end
+#         end
+#
+#         dropzeros!(mat)
+#
+#         @assert norm(mat - transpose(mat)) < 1e-10
+#
+#     end
+#
+#     return PointE(mats, vec, dims)
+# end
+
+
+# function PointE(mats::Vector{Dense{T}}, vec::AbstractArray{T}) where T<:Number
+#     dims = map(x->size(x, 1), mats)
+#
+#     return PointE(mats, vec, dims)
+# end
 
 function PointE(dims::AbstractArray{Int}, vecdim::Int, T::DataType, U::DataType)
     mats = Vector{U}(undef, length(dims))
-    
-    if U<:Dense
-        for (i, dimi) in enumerate(dims)
+
+    for (i, dimi) in enumerate(dims)
+        if U<:Dense
             mats[i] = zeros(T, dimi, dimi)
-        end
-    else
-        for (i, dimi) in enumerate(dims)
+        elseif U<: DenseSym
+            mats[i] = Symmetric(zeros(T, dimi, dimi))
+        elseif U<: DenseHerm
+            mats[i] = Hermitian(zeros(T, dimi, dimi))
+        elseif U<:Sparse
             mats[i] = spzeros(T, dimi, dimi)
+        elseif U<: SparseSym
+            mats[i] = Symmetric(spzeros(T, dimi, dimi))
+        elseif U<: SparseHerm
+            mats[i] = Hermitian(spzeros(T, dimi, dimi))
+        else
+            @error("PointE(): Unsupported matrix type $U")
         end
     end
-    
+
     return PointE(mats, zeros(T, vecdim), dims)
 end
 
@@ -70,11 +130,11 @@ function copy(x::PointE{T, U}) where {T<:Number, U}
     return PointE(mats, vec)
 end
 
-function densify(x::PointE{T, Sparse{T}}) where T<:Number
+function densify(x::PointE{T, U}) where {T<:Number, U<:Union{AbstractArray, Symmetric}}
     mats = Vector{Dense{T}}([zeros(T, n, n) for n in x.dims])
 
     for (i, mat) in enumerate(x.mats)
-        mats[i] = Matrix(Symmetric(mat, :L))
+        mats[i] = Matrix(mat)
     end
 
     return PointE(mats, copy(x.vec))
