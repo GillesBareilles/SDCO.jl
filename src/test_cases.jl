@@ -171,6 +171,8 @@ function testcase2(p, q, r; storage=:sparsesym)
             cmat[j, i+q] = B0[j, i]
         end
         c = PointE([cmat], Float64[])
+    else
+        error("Unknown parameter $storage, choose from :sparsesym, :sparsefull")
     end
 
     if storage == :sparsesym

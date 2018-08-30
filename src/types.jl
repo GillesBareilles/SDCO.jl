@@ -129,7 +129,7 @@ end
 function get_defaultoption()
     return OrderedDict{Symbol, Any}(
                     :opt_ε => 1e-10,
-                    :opt_maxit => 30,
+                    :opt_maxit => 60,
                     :opt_outlev => 1,
     )
 end
