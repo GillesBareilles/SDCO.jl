@@ -11,38 +11,40 @@ end
 function solve(pb::SDCOContext{T}, z0) where T<:Number
     z = deepcopy(z0)
 
+    outlev = pb.options[:opt_outlev]
+
     ## Centering section
-    theta = 1/3
-    tau = 0.99
-    omega = 1e-4
+    θ = 1/3
+    τ = 0.99
+    ω = 1e-4
 
     cur_mu = mu(z)
     cur_delta = delta(pb, z)
     it = 0
-    alpha = -1
+    α = -1
     d = NesterovToddstep(pb, z, 0.)
 
-    print_header(stdout)
-    print_it(stdout, it, -1, -1, cur_mu, cur_delta, -1, alpha)
+    (outlev > 0) && print_header(stdout)
+    (outlev > 0) && print_it(stdout, it, -1, -1, cur_mu, cur_delta, -1, α)
 
-    if (cur_delta > theta)
-        println("Getting to central path...")
+    if (cur_delta > θ)
+        (outlev > 0) && println("Getting to central path...")
     end
 
-    while (cur_delta > theta) && (it < 20)
+    while (cur_delta > θ) && (it < 20)
         t1 = time()
-        alpha = NTcentering_it!(pb, tau, omega, z, cur_mu, cur_delta)
+        α = NTcentering_it!(pb, τ, ω, z, cur_mu, cur_delta)
 
         cur_mu = mu(z)
         cur_delta = delta(pb, z)
 
         it += 1
-        print_it(stdout, it, -1, -1, cur_mu, cur_delta, alpha, time() - t1)
+        (outlev > 0) && print_it(stdout, it, -1, -1, cur_mu, cur_delta, α, time() - t1)
     end
 
 
     ## Path following section
-    println("Following central path...")
+    (outlev > 0) && println("Following central path...")
     ε = pb.options[:opt_ε]
     maxit = pb.options[:opt_maxit]
     alphacorr = 0.999
@@ -53,23 +55,23 @@ function solve(pb::SDCOContext{T}, z0) where T<:Number
 
     cur_μ = mu(z)
 
-    K = log(ε / cur_μ) / log(1 + 4 / (13*nc) * (1 - sqrt(1+13*nc/2)))
-    @show K
+    # K = log(ε / cur_μ) / log(1 + 4 / (13*nc) * (1 - sqrt(1+13*nc/2)))
+    # @show K
 
     while (it < maxit) && (cur_μ > ε)
         t1 = time()
 
-        res = alpha, cur_μ = NTpredcorr_it!(pb, alphacorr, cur_μ, cur_delta, z, d)
+        res = α, cur_μ = NTpredcorr_it!(pb, alphacorr, cur_μ, cur_delta, z, d)
 
         it+=1
 
         cur_μ = mu(z)
         cur_delta = delta(pb, z)
-        print_it(stdout, it, get_primobj(pb, z), get_dualobj(pb, z), cur_μ, cur_delta, alpha, time() - t1)
+        (outlev > 0) && print_it(stdout, it, get_primobj(pb, z), get_dualobj(pb, z), cur_μ, cur_delta, α, time() - t1)
     end
 
-    @show get_primobj(pb, z) - get_dualobj(pb, z)
-    @show mu(z)
+    (outlev > 0) && println("Final duality gap: ", get_primobj(pb, z) - get_dualobj(pb, z))
+    (outlev > 0) && println("Final mu         : ", mu(z))
 
     return z
 end
@@ -121,16 +123,16 @@ function NTpredcorr_it!(pb, alphacorr, cur_mu, cur_delta, z, d)
     # affine step
     NesterovToddstep!(pb, z, 0., d)
 
-    alpha = NT_getalpha(pb, z, d)
+    α = NT_getalpha(pb, z, d)
 
-    printstyled("mu(z) - mu(zc) : ", abs(mu_z - mu_zc), "\n", color=:red)
+    (pb.options[:opt_outlev] > 1) && printstyled("mu(z) - mu(zc) : ", abs(mu_z - mu_zc), "\n", color=:red)
 
-    alphacorr = min(alpha, 0.99999)
+    alphacorr = min(α, 0.99999)
 
     add!(z, alphacorr*d)
     mu_za = mu(z)
 
-    printstyled("mu(z+) / mu(zc) - (1 - alpha): ", abs(mu_za / mu_zc - (1-alpha)), "\n", color=:red)
+    (pb.options[:opt_outlev] > 1) && printstyled("mu(z+) / mu(zc) - (1 - alpha): ", abs(mu_za / mu_zc - (1-α)), "\n", color=:red)
 
-    return alpha, mu_za
+    return α, mu_za
 end

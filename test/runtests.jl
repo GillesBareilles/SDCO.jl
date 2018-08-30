@@ -96,11 +96,12 @@ end
 end
 
 @testset "Minimum Matrix Norm, feasible starting point" begin
-    @testset "mmn-$p-$q-$r" for (p, q, r) in [ (2, 2, 2) ]
+    @testset "mmn-$p-$q-$r" for (p, q, r) in [ (2, 2, 2), (4, 2, 2) ]
         ε = 1e-10
 
         pb, z = testcase2(p, q, r)
         pb.options[:opt_ε] = ε
+        pb.options[:opt_outlev] = 0
 
         zfinal = solve(pb, z)
 
