@@ -27,72 +27,6 @@ function PointE(mats::Vector{U}, vec::AbstractArray{T}) where {U<:AbstractMatrix
     return PointE(mats, vec, dims)
 end
 
-# function PointE(mats::Vector{Sparse{T}}, vec::AbstractArray{T}) where T<:Number
-#     dims = map(x->size(x, 1), mats)
-#
-#     ## Check that sparse underlying matrix is lower triangular.
-#     for (ind, mat) in enumerate(mats)
-#         rows = SparseArrays.rowvals(mat)
-#         m, n = size(mat)
-#         for i = 1:n
-#             for j in nzrange(mat, i)
-#                 if rows[j] < i
-#                     @error("PointE(): dropping non lower triangular term ($i, $(rows[j])), matrix $ind.")
-#                     mat[rows[j], i] = 0
-#                 end
-#             end
-#         end
-#
-#         dropzeros!(mat)
-#     end
-#
-#     return PointE(mats, vec, dims)
-# end
-
-# """
-# version returning a stored symmetric sparse matrix (unefficient storage)
-# """
-# function PointE(mats::Vector{Sparse{T}}, vec::AbstractArray{T}) where T<:Number
-#     dims = map(x->size(x, 1), mats)
-#
-#     ## Check that sparse underlying matrix is lower triangular.
-#     for (ind, mat) in enumerate(mats)
-#         mat += transpose(mat)
-#         # rows = SparseArrays.rowvals(mat)
-#         m, n = size(mat)
-#         # for i = 1:n
-#         #     for j in nzrange(mat, i)
-#         #         if rows[j] < i
-#         #             # @error("PointE(): dropping non lower triangular term ($i, $(rows[j])), matrix $ind.")
-#         #             mat[rows[j], i] = 0
-#         #         end
-#         #
-#         #         if i != rows[j]
-#         #             mat[i, rows[j]] = mat[rows[j], i]
-#         #         end
-#         #     end
-#         # end
-#         for i=1:min(n, m)
-#             if mat[i, i] != 0
-#                 mat[i, i] *= 0.5
-#             end
-#         end
-#
-#         dropzeros!(mat)
-#
-#         @assert norm(mat - transpose(mat)) < 1e-10
-#
-#     end
-#
-#     return PointE(mats, vec, dims)
-# end
-
-
-# function PointE(mats::Vector{Dense{T}}, vec::AbstractArray{T}) where T<:Number
-#     dims = map(x->size(x, 1), mats)
-#
-#     return PointE(mats, vec, dims)
-# end
 
 function PointE(dims::AbstractArray{Int}, vecdim::Int, T::DataType, U::DataType)
     mats = Vector{U}(undef, length(dims))
@@ -179,6 +113,22 @@ function SDCOContext(c::PointE{T, U}, A::Vector{PointE{T, U}}, b::Array{T, 1}; o
 
     nc = sum(nsdpvar) + nscalvar
 
+    defoptions = get_defaultoption()
 
-    return SDCOContext(c, A, b, nsdpvar, nscalvar, m, nc, OrderedDict())
+    for (opt, val) in options
+        if haskey(defoptions, opt)
+            defoptions[opt] = val
+        else
+            @warn "option $opt not supported"
+        end
+    end
+
+    return SDCOContext(c, A, b, nsdpvar, nscalvar, m, nc, defoptions)
+end
+
+function get_defaultoption()
+    return OrderedDict{Symbol, Any}(
+                    :opt_ε => 1e-10,
+                    :opt_maxit => 30,
+    )
 end

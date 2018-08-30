@@ -43,30 +43,29 @@ function solve(pb::SDCOContext{T}, z0) where T<:Number
 
     ## Path following section
     println("Following central path...")
-    epsilon = 5e-10
-    maxit = 30
+    ε = pb.options[:opt_ε]
+    maxit = pb.options[:opt_maxit]
     alphacorr = 0.999
 
     nc = get_nc(z.x)
     # K = ceil((1 + sqrt(1+ 13*nc/2)) * log10(mu(z) / epsilon))
     # @show K
 
-    ε = 5e-10
-    μ = mu(z)
+    cur_μ = mu(z)
 
-    K = log(ε / μ) / log(1 + 4 / (13*nc) * (1 - sqrt(1+13*nc/2)))
+    K = log(ε / cur_μ) / log(1 + 4 / (13*nc) * (1 - sqrt(1+13*nc/2)))
     @show K
 
-    while (it < maxit) && (mu(z) > epsilon)
+    while (it < maxit) && (cur_μ > ε)
         t1 = time()
 
-        res = alpha, cur_mu = NTpredcorr_it!(pb, alphacorr, cur_mu, cur_delta, z, d)
+        res = alpha, cur_μ = NTpredcorr_it!(pb, alphacorr, cur_μ, cur_delta, z, d)
 
         it+=1
 
-        cur_mu = mu(z)
+        cur_μ = mu(z)
         cur_delta = delta(pb, z)
-        print_it(stdout, it, get_primobj(pb, z), get_dualobj(pb, z), cur_mu, cur_delta, alpha, time() - t1)
+        print_it(stdout, it, get_primobj(pb, z), get_dualobj(pb, z), cur_μ, cur_delta, alpha, time() - t1)
     end
 
     @show get_primobj(pb, z) - get_dualobj(pb, z)
@@ -77,39 +76,38 @@ end
 
 
 
-function NTcentering_it!(pb, tau, omega, z, cur_mu, cur_delta)
-    # mu_z = mu(z)
+function NTcentering_it!(pb, τ, ω, z, cur_mu, cur_delta)
     mu_z = cur_mu
     dc = NesterovToddstep(pb, z, mu_z)
 
-    if cur_delta < sqrt( (2*tau^2) / (1+2*tau^2) )
-        alpha = 1
+    if cur_delta < sqrt( (2*τ^2) / (1+2*τ^2) )
+        α = 1
     else
         i = 0
-        alpha = 2^(-i)
+        α = 2^(-i)
 
-        while phi_mu(z+alpha*dc, mu_z) > (phi_mu(z, mu_z) - 4*omega*mu_z*alpha*delta(pb, z)^2)
+        while phi_mu(z + α*dc, mu_z) > (phi_mu(z, mu_z) - 4*ω*mu_z*α*delta(pb, z)^2)
             i += 1
-            alpha = (1/2)^(i)
+            α = (1/2)^(i)
 
             (i > 100) && error("i = $i...")
         end
     end
 
-    add!(z, alpha * dc)
+    add!(z, α * dc)
 
-    return alpha
+    return α
 end
 
-function symmetrize!(z)
-    for i in 1:length(z.x.mats)
-        z.x.mats[i] = (z.x.mats[i] + transpose(z.x.mats[i]))/2
-    end
-
-    for i in 1:length(z.s.mats)
-        z.s.mats[i] = (z.s.mats[i] + transpose(z.s.mats[i]))/2
-    end
-end
+# function symmetrize!(z)
+#     for i in 1:length(z.x.mats)
+#         z.x.mats[i] = (z.x.mats[i] + transpose(z.x.mats[i]))/2
+#     end
+#
+#     for i in 1:length(z.s.mats)
+#         z.s.mats[i] = (z.s.mats[i] + transpose(z.s.mats[i]))/2
+#     end
+# end
 
 function NTpredcorr_it!(pb, alphacorr, cur_mu, cur_delta, z, d)
     # centering step

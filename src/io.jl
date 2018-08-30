@@ -16,6 +16,10 @@ function print(io::IO, pb::SDCOContext)
         println(io, " **** ctr $i: rhs = $(pb.b[i])")
         print(io, ai)
     end
+    println(io)
+    for (opt, val) in pb.options
+        println(io, opt, "   => ", val)
+    end
 end
 
 
