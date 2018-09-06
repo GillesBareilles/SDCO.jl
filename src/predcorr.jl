@@ -8,7 +8,13 @@ function print_it(io::IO, it, primobj, dualobj, mu, delta, alpha, time)
     @printf("%2i  % .3e  % .3e   % .3e    % .6f   % .3e   %f\n", it, primobj, dualobj, mu, delta, alpha, time)
 end
 
-function solve(pb::SDCOContext{T}, z0) where T<:Number
+"""
+    solve(pb::SDCOContext{T}, z0::PointPrimalDual)
+
+    Strictly feasible IP method for positive orthant and SDP cone, with NT scaling.
+    z0 is the strictly feasible starting point.
+"""
+function solve(pb::SDCOContext{T}, z0::PointPrimalDual) where T<:Number
     z = deepcopy(z0)
 
     outlev = pb.options[:opt_outlev]

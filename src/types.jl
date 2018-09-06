@@ -1,5 +1,5 @@
 import Base.copy
-export PointE, SDCOContext, copy, densify
+export PointE, copy, densify, SDCOContext
 
 
 ### Matrix types
@@ -10,8 +10,6 @@ const DenseHerm{T} = Hermitian{T, Dense{T}} where {T<:Complex}
 const Sparse{T} = SparseArrays.SparseMatrixCSC{T,Int64} where T<:Number
 const SparseSym{T} = Symmetric{T, Sparse{T}} where {T<:Real}
 const SparseHerm{T} = Hermitian{T, Sparse{T}} where {T<:Complex}
-
-# const SymSparse{T} = Symmetric{T, Sparse{T}}
 
 mutable struct PointE{T, U}
     mats::Vector{U}             # Collection of symmetric matrices
@@ -85,10 +83,16 @@ function PointPrimalDual(dims::AbstractArray{Int}, vecdim::Int, m::Int, T::DataT
 end
 
 
-mutable struct SDCOContext{T, U}
-    c::PointE{T, U}                 # Objective: linear part
-    A::Vector{PointE{T, U}}         # Ctr : linear operator
+################################################################################
+##### Context structure
+################################################################################
+mutable struct SDCOContext{T, matT}
+    c::PointE{T, matT}                 # Objective: linear part
+    A::Vector{PointE{T, matT}}         # Ctr : linear operator
     b::Array{T, 1}                  #       rhs
+
+    mr::Int                         # Real valued constraints are indexed from 1 to mr
+    mc::Int                         # Clpx valued constraints are indexed from mr+1 to mc
 
     nsdpvar::Vector{Int}            # Size of the several SDP cones
     nscalvar::Int                   # Number of scalar variables (of type T)
@@ -98,7 +102,7 @@ mutable struct SDCOContext{T, U}
     options::OrderedDict
 end
 
-function SDCOContext(c::PointE{T, U}, A::Vector{PointE{T, U}}, b::Array{T, 1}; options=OrderedDict()) where {T<:Number, U}
+function SDCOContext(c::PointE{T, matT}, A::Vector{PointE{T, matT}}, b::Array{T, 1}; options=OrderedDict()) where {T<:Number, matT}
     @assert length(A) == length(b)
     m = length(A)
 
@@ -123,7 +127,7 @@ function SDCOContext(c::PointE{T, U}, A::Vector{PointE{T, U}}, b::Array{T, 1}; o
         end
     end
 
-    return SDCOContext(c, A, b, nsdpvar, nscalvar, m, nc, defoptions)
+    return SDCOContext(c, A, b, 0, 0, nsdpvar, nscalvar, m, nc, defoptions)
 end
 
 function get_defaultoption()

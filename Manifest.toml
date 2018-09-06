@@ -33,9 +33,9 @@ version = "1.0.0"
 
 [[Cairo]]
 deps = ["BinDeps", "Colors", "Compat", "Graphics", "Homebrew", "Libdl", "Pkg", "WinRPM"]
-git-tree-sha1 = "8ab06c8dbb396dc93e1ce14d4c987de2eb6e82c3"
+git-tree-sha1 = "a427098d5aa2808504d94b8ed9fc5740ceaf71d0"
 uuid = "159f3aea-2a34-519c-b102-8c37f9878175"
-version = "0.5.4"
+version = "0.5.6"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random", "Test"]
@@ -45,21 +45,21 @@ version = "0.7.4"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "InteractiveUtils", "Pkg", "Printf", "Reexport", "Test"]
-git-tree-sha1 = "26f24e97782dd19d52cf97073c316897ac4d0e30"
+git-tree-sha1 = "8c89e0a9a583954eae3efcf6a531e51c02b38cee"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
-version = "0.9.3"
+version = "0.9.4"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "277d3807440d9793421354b6680911fc95d91a84"
+git-tree-sha1 = "ae262fa91da6a74e8937add6b613f58cd56cdad4"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "1.0.1"
+version = "1.1.0"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "REPL", "Random", "Serialization", "Test"]
-git-tree-sha1 = "6e72a9098f5774601c8c8d6a4511a68270594910"
+git-tree-sha1 = "2afbbd0294306b0b74a753c196be50b35edb625c"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.11.0"
+version = "0.11.1"
 
 [[Dates]]
 deps = ["Printf"]
@@ -89,9 +89,9 @@ uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[FixedPointNumbers]]
 deps = ["Pkg", "Test"]
-git-tree-sha1 = "31cbf24d537a217475b37274df05de09882b53f1"
+git-tree-sha1 = "b8045033701c3b10bf2324d7203404be7aef88ba"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-version = "0.5.2"
+version = "0.5.3"
 
 [[Graphics]]
 deps = ["Colors", "Compat", "NaNMath"]
@@ -101,15 +101,15 @@ version = "0.3.0"
 
 [[Gtk]]
 deps = ["BinDeps", "Cairo", "Compat", "Graphics", "Homebrew", "Libdl", "Pkg", "Reexport", "Serialization", "Test", "WinRPM"]
-git-tree-sha1 = "b6df22eefcaa054fe4b865179dfbc0b1a4d95670"
+git-tree-sha1 = "d3a195cfae66e0364346a881d4227dee10d791d6"
 uuid = "4c0ca9eb-093a-5379-98c5-f87ac0bbbf44"
-version = "0.16.1"
+version = "0.16.2"
 
 [[GtkReactive]]
-deps = ["Cairo", "Colors", "Compat", "FixedPointNumbers", "Graphics", "Gtk", "IntervalSets", "Reactive", "Reexport", "RoundingIntegers"]
-git-tree-sha1 = "c49dc86a8c541d3f81c33d4eabb51115de423b2f"
+deps = ["Cairo", "Colors", "Dates", "FixedPointNumbers", "Graphics", "Gtk", "IntervalSets", "Pkg", "Reactive", "Reexport", "RoundingIntegers", "Test"]
+git-tree-sha1 = "477be363cd92074fc22b6eee9ef639194ec3e73b"
 uuid = "27996c0f-39cd-5cc1-a27a-05f136f946b6"
-version = "0.4.1"
+version = "0.5.1"
 
 [[HTTPClient]]
 deps = ["Compat", "LibCURL"]
@@ -129,9 +129,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[IntervalSets]]
 deps = ["Compat"]
-git-tree-sha1 = "d488eaaac00c8ea66423773e5a86ac81b9ac03e0"
+git-tree-sha1 = "1ea9a7307cfcce3664ddcceb60fe31dc82bc3019"
 uuid = "8197267c-284f-5f27-9208-e0e47529a953"
-version = "0.2.0"
+version = "0.2.1"
 
 [[JSON]]
 deps = ["Dates", "Distributed", "Mmap", "Pkg", "Sockets", "Test", "Unicode"]
@@ -141,9 +141,9 @@ version = "0.19.0"
 
 [[LibCURL]]
 deps = ["BinaryProvider", "Compat", "Libdl", "Pkg"]
-git-tree-sha1 = "f7c4fd37291207ec6bd4b7b9abfc512d4bb8b88e"
+git-tree-sha1 = "13cace3a2a2e76de68024c0b2c1a1bf00ee81b88"
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
-version = "0.3.1"
+version = "0.3.2"
 
 [[LibExpat]]
 deps = ["Compat", "Pkg"]
@@ -208,10 +208,10 @@ deps = ["Printf"]
 uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 
 [[ProfileView]]
-deps = ["Cairo", "Colors", "FileIO", "Graphics", "Gtk", "GtkReactive", "IntervalSets"]
-git-tree-sha1 = "8ac239bfbf0da5e3c5c2e4d75777bb18a32187c8"
+deps = ["Cairo", "Colors", "FileIO", "Graphics", "Gtk", "GtkReactive", "InteractiveUtils", "IntervalSets", "Pkg", "Profile", "UUIDs"]
+git-tree-sha1 = "5943d68015219a58bf4d949c20b89f1db558c963"
 uuid = "c46f51b8-102a-5cf2-8d2c-8597cb0e0da7"
-version = "0.3.0"
+version = "0.4.0"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets"]
@@ -222,10 +222,10 @@ deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[Reactive]]
-deps = ["DataStructures", "Test"]
-git-tree-sha1 = "9471cc4f9b88f76c17936b4bcedc0766719a19fe"
+deps = ["DataStructures", "Distributed", "Pkg", "Test"]
+git-tree-sha1 = "3df2dd92990196089943473e742039050dbf7271"
 uuid = "a223df75-4e93-5b7c-acf9-bdd599c0f4de"
-version = "0.7.0"
+version = "0.8.1"
 
 [[Reexport]]
 deps = ["Pkg"]
@@ -235,9 +235,9 @@ version = "0.2.0"
 
 [[Revise]]
 deps = ["Distributed", "FileWatching", "InteractiveUtils", "LibGit2", "OrderedCollections", "Pkg", "REPL", "Random", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "6aa02109d5ec63e6105e24b6b78f8f2cceea5518"
+git-tree-sha1 = "6eca1be77272a5c07cb80b010f5f794eb041b0f6"
 uuid = "295af30f-e4ad-537b-8983-00126c2a3abe"
-version = "0.7.1"
+version = "0.7.5"
 
 [[RoundingIntegers]]
 deps = ["Pkg", "Test"]
@@ -296,7 +296,7 @@ uuid = "83e47e11-4a7a-5bf8-892c-11f81bf9b223"
 version = "0.1.1"
 
 [[WinRPM]]
-deps = ["BinDeps", "Compat", "HTTPClient", "LibExpat", "Libdl", "Libz", "SHA", "URIParser"]
-git-tree-sha1 = "023faa2430b4ad3f9cf073c03cf100d80630fb6d"
+deps = ["BinDeps", "Compat", "HTTPClient", "LibExpat", "Libdl", "Libz", "URIParser"]
+git-tree-sha1 = "2a889d320f3b77d17c037f295859fe570133cfbf"
 uuid = "c17dfb99-b4f7-5aad-8812-456da1ad7187"
-version = "0.4.0"
+version = "0.4.2"

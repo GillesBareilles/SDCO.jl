@@ -25,10 +25,10 @@ end
 
 function print(io::IO, pt::PointE)
     for (i, mat) in enumerate(pt.mats)
-        print(io, " - mat $i - ")
+        print(io, " - mat $i: ")
         display(mat)
     end
-    print(io, " - vec - ")
+    print(io, " - vec: ")
     display(pt.vec)
 end
 

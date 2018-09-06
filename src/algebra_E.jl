@@ -1,7 +1,20 @@
 import LinearAlgebra: dot, norm
-import Base: +, -, inv, *, transpose, sqrt
+import Base: +, -, inv, *, transpose, sqrt, ones
 export dot, norm, add, add!, product, -, +, *, transpose
-export hadamard, inv, sqrt
+export hadamard, inv, sqrt, ones
+
+function ones(x::PointE{T, matT}) where {T, matT}
+    mats = matT[]
+    for dim in x.dims
+        mat = matT(zeros(T, dim, dim))
+        for i=1:dim
+            mat[i, i] = convert(T, 1.0)
+        end
+        push!(mats, mat)
+    end
+
+    return PointE(mats, ones(T, length(x.vec)))
+end
 
 """
 Scalar product over E, primal space
@@ -199,14 +212,9 @@ end
 function hadamard!(x::PointE{T}, y::PointE{T}, z::PointE{T}, out::PointE{T, Dense{T}}; transposefirst=false) where T<:Number
     if transposefirst
         for n=1:length(x.dims)
-            # println("---")
-            # @show typeof(x.mats[n])
-            # @show typeof(y.mats[n])
-            # @show typeof(z.mats[n])
             out.mats[n] = transpose(x.mats[n])
             out.mats[n] *= y.mats[n]
             out.mats[n] *= z.mats[n]
-            # println("---")
         end
     else
         for n=1:length(x.dims)
@@ -218,24 +226,6 @@ function hadamard!(x::PointE{T}, y::PointE{T}, z::PointE{T}, out::PointE{T, Dens
 
     nothing
 end
-
-# function hadamard!(x::PointE{T, Dense{T}}, y::PointE{T, Dense{T}}, z::PointE{T, Dense{T}}, out::PointE{T, Dense{T}}; transposefirst=false) where T<:Number
-#     if transposefirst
-#         for n=1:length(x.dims)
-#             out.mats[n] = transpose(x.mats[n])
-#             out.mats[n] *= y.mats[n]
-#             out.mats[n] *= z.mats[n]
-#         end
-#     else
-#         for n=1:length(x.dims)
-#             out.mats[n] = x.mats[n] * y.mats[n] * z.mats[n]
-#         end
-#     end
-#
-#     out.vec = x.vec .* y.vec .* z.vec
-#
-#     nothing
-# end
 
 #####################################################################"
 ## Point Primal Dual
