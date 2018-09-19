@@ -1,12 +1,25 @@
 import LinearAlgebra: dot, norm
 import Base: +, -, inv, *, transpose, sqrt, ones
 export dot, norm, add, add!, product, -, +, *, transpose
-export hadamard, inv, sqrt, ones
+export hadamard, inv, sqrt, ones, norm
 
 function ones(x::PointE{T, matT}) where {T, matT}
     mats = matT[]
     for dim in x.dims
         mat = matT(zeros(T, dim, dim))
+        for i=1:dim
+            mat[i, i] = convert(T, 1.0)
+        end
+        push!(mats, mat)
+    end
+
+    return PointE(mats, ones(T, length(x.vec)))
+end
+
+function ones(x::PointE{T, matT}, matrixT) where {T, matT}
+    mats = matrixT[]
+    for dim in x.dims
+        mat = matrixT(zeros(T, dim, dim))
         for i=1:dim
             mat[i, i] = convert(T, 1.0)
         end
@@ -31,11 +44,21 @@ function dot(pt1::PointE{T}, pt2::PointE{T}) where {T<:Number}
     return innerprod
 end
 
-function norm(pt1::PointE{T}) where {T<:Number}
-    sqrt(dot(pt1, pt1))
+function norm(x::PointE{T, matT}, p::Real) where {T<:Number, matT <: AbstractArray}
+    if p == 2
+        return sqrt(dot(x, x))
+
+    elseif p == Inf
+        sup = maximum(x.vec)
+
+        for mat in x.mats
+            sup = max(sup, norm(mat, Inf))
+        end
+
+        return sup
+    end
+    @error "norm(): unhandled p"
 end
-
-
 
 ################################################################################
 ### Additive algebra
@@ -49,6 +72,11 @@ function add!(x::PointE{T}, y::PointE{T}) where {T<:Number}
     for (i, yi) in enumerate(y.vec)
         x.vec[i] += yi
     end
+    nothing
+end
+
+function add!(x::Array{Float64,1}, y::Array{Float64,1})
+    x += y
     nothing
 end
 
@@ -85,8 +113,6 @@ function add(x::PointE{T, U}, y::PointE{T, U}) where {T<:Number, U<:AbstractArra
 
     for i=1:length(x.dims)
         point.mats[i] = x.mats[i] + y.mats[i]
-        # add!(point.mats[i], x.mats[i])
-        # add!(point.mats[i], y.mats[i])
     end
 
     point.vec = x.vec .+ y.vec
@@ -266,10 +292,6 @@ function transpose(x::PointE{T, Dense{T}}) where T<:Number
 
     for (matind, mat) in enumerate(x.mats)
         mats[matind] = transpose(mat)
-        # n = x.dims[matind]
-        # for i=1:n, j=1:n
-        #     mats[matind][j, i] = mat[i, j]
-        # end
     end
 
     return PointE(mats, x.vec)

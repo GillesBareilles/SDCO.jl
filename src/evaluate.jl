@@ -30,19 +30,6 @@ function evaluate(A::Vector{PointE{T, U}}, y::Vector{T}) where {T<:Number, U<:Ab
     return res
 end
 
-# function evaluate(A::Vector{PointE{T}}, y::Vector{T}; evaltype::DataType=Dense{T}) where T<:Number
-#     @assert length(A) == length(y)
-#
-#     dims = first(A).dims
-#     res = PointE(dims, length(first(A).vec), T, evaltype)
-#
-#     for (i, ai) in enumerate(A)
-#         add!(res, product(A[i], y[i]))
-#     end
-#
-#     return res
-# end
-
 function get_primobj(pb::SDCOContext{T}, x::PointE{T}) where T<:Number
     @assert pb.c.dims == x.dims
     return dot(pb.c, x)
@@ -103,7 +90,15 @@ function min(pb::SDCOContext{T}, x::PointE{T, Dense{T}}) where {T<:Number, U<:De
     end
 
     for (i, mat) in enumerate(x.mats)
-        eigmin = LinearAlgebra.eigmin(mat)
+        if norm(mat - transpose(mat)) == 0
+            eigmin = LinearAlgebra.eigmin(mat)
+        elseif norm(mat - transpose(mat)) < 1e-14
+            eigmin = LinearAlgebra.eigmin(mat + transpose(mat))
+        else
+            @show norm(mat - transpose(mat))
+            @error("Matrix s=$i is non symmetric.\nnorm(mat-transpose(mat)) = ", norm(mat-transpose(mat)))
+        end
+
         minx = min(minx, eigmin)
     end
 

@@ -1,17 +1,11 @@
-[[ASTInterpreter2]]
-deps = ["DebuggerFramework"]
-git-tree-sha1 = "8df3d36e0286777d226f4fd4956a432b73425186"
-uuid = "e6d88f4b-b52a-544c-a8d3-7a4f12cb39c3"
-version = "0.1.1"
-
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[BenchmarkTools]]
 deps = ["JSON", "Pkg", "Printf", "Statistics", "Test"]
-git-tree-sha1 = "623941d5eb10e440eb12c97183f96f2f0191d0ca"
+git-tree-sha1 = "e686f1754227e4748259f400839b83a1e8773e02"
 uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "0.4.0"
+version = "0.4.1"
 
 [[BinDeps]]
 deps = ["Compat", "Libdl", "SHA", "URIParser"]
@@ -37,6 +31,12 @@ git-tree-sha1 = "a427098d5aa2808504d94b8ed9fc5740ceaf71d0"
 uuid = "159f3aea-2a34-519c-b102-8c37f9878175"
 version = "0.5.6"
 
+[[Cassette]]
+deps = ["InteractiveUtils", "LinearAlgebra", "Test"]
+git-tree-sha1 = "97abd9e245237814b02d24e8e57c3bcbc2f59ac0"
+uuid = "7057c7e9-c182-5462-911a-8362d720325c"
+version = "0.1.1"
+
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random", "Test"]
 git-tree-sha1 = "0e3209ba7418aed732e5c3818076b4400ee36c08"
@@ -57,18 +57,13 @@ version = "1.1.0"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "REPL", "Random", "Serialization", "Test"]
-git-tree-sha1 = "2afbbd0294306b0b74a753c196be50b35edb625c"
+git-tree-sha1 = "5162c360c52e9265e0bfafb71415c31f746f7e04"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.11.1"
+version = "0.12.0"
 
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
-
-[[DebuggerFramework]]
-git-tree-sha1 = "0288f278a5f58c28c67ad1cf55dce950069709b7"
-uuid = "67417a49-6d77-5db2-98c7-c13144130cd2"
-version = "0.1.2"
 
 [[DelimitedFiles]]
 deps = ["Mmap"]
@@ -95,15 +90,15 @@ version = "0.5.3"
 
 [[Graphics]]
 deps = ["Colors", "Compat", "NaNMath"]
-git-tree-sha1 = "4671f2427ea4494a5d14fd485c4aa61ec1fb7cd2"
+git-tree-sha1 = "e3ead4211073d4117a0d2ef7d1efc5c8092c8412"
 uuid = "a2bd30eb-e257-5431-a919-1863eab51364"
-version = "0.3.0"
+version = "0.4.0"
 
 [[Gtk]]
 deps = ["BinDeps", "Cairo", "Compat", "Graphics", "Homebrew", "Libdl", "Pkg", "Reexport", "Serialization", "Test", "WinRPM"]
-git-tree-sha1 = "d3a195cfae66e0364346a881d4227dee10d791d6"
+git-tree-sha1 = "261bfcf4910db53990f289c1338aa8eb3b89fb44"
 uuid = "4c0ca9eb-093a-5379-98c5-f87ac0bbbf44"
-version = "0.16.2"
+version = "0.16.4"
 
 [[GtkReactive]]
 deps = ["Cairo", "Colors", "Dates", "FixedPointNumbers", "Graphics", "Gtk", "IntervalSets", "Pkg", "Reactive", "Reexport", "RoundingIntegers", "Test"]
@@ -140,10 +135,10 @@ uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.19.0"
 
 [[LibCURL]]
-deps = ["BinaryProvider", "Compat", "Libdl", "Pkg"]
-git-tree-sha1 = "13cace3a2a2e76de68024c0b2c1a1bf00ee81b88"
+deps = ["BinaryProvider", "Compat", "Libdl", "Pkg", "Printf"]
+git-tree-sha1 = "6339c87cb76923a3cf947fcd213cbc364355c9c9"
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
-version = "0.3.2"
+version = "0.4.1"
 
 [[LibExpat]]
 deps = ["Compat", "Pkg"]
@@ -190,10 +185,10 @@ uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "0.3.2"
 
 [[OrderedCollections]]
-deps = ["Random", "Serialization", "Test"]
-git-tree-sha1 = "cc23c786049328c93138da14e7020a464d707a23"
+deps = ["InteractiveUtils", "Pkg", "Random", "Serialization", "Test"]
+git-tree-sha1 = "27af6dc22697bf20ace8e3a45f404a34eaf0b819"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "0.1.0"
+version = "1.0.0"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
@@ -235,9 +230,9 @@ version = "0.2.0"
 
 [[Revise]]
 deps = ["Distributed", "FileWatching", "InteractiveUtils", "LibGit2", "OrderedCollections", "Pkg", "REPL", "Random", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "6eca1be77272a5c07cb80b010f5f794eb041b0f6"
+git-tree-sha1 = "48ad8dcdacf24185eb1bc4253a17dc39e1485079"
 uuid = "295af30f-e4ad-537b-8983-00126c2a3abe"
-version = "0.7.5"
+version = "0.7.10"
 
 [[RoundingIntegers]]
 deps = ["Pkg", "Test"]
@@ -271,10 +266,10 @@ deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[Traceur]]
-deps = ["ASTInterpreter2", "MacroTools", "Vinyl"]
-git-tree-sha1 = "e742912ca387de0e2e71df19adb0c67c5fc0ccc9"
+deps = ["Cassette", "InteractiveUtils", "Logging", "MacroTools", "Test"]
+git-tree-sha1 = "d46ea4a2575f896e90c8a4b52ce2841e6db7d059"
 uuid = "37b6cedf-1f77-55f8-9503-c64b63398394"
-version = "0.1.1"
+version = "0.2.0"
 
 [[URIParser]]
 deps = ["Test", "Unicode"]
@@ -288,12 +283,6 @@ uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
-
-[[Vinyl]]
-deps = ["ASTInterpreter2", "MacroTools"]
-git-tree-sha1 = "fc5579bfad750163c4c5e46f7baeded0c3c8cd27"
-uuid = "83e47e11-4a7a-5bf8-892c-11f81bf9b223"
-version = "0.1.1"
 
 [[WinRPM]]
 deps = ["BinDeps", "Compat", "HTTPClient", "LibExpat", "Libdl", "Libz", "URIParser"]

@@ -17,6 +17,8 @@ include("predcorr.jl")
 include("bigM_types.jl")
 include("bigM_solver.jl")
 
+include("HSD_solver.jl")
+
 include("test_cases.jl")
 
 end

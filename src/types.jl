@@ -79,7 +79,7 @@ mutable struct PointPrimalDual{T, U}
 end
 
 function PointPrimalDual(dims::AbstractArray{Int}, vecdim::Int, m::Int, T::DataType, U::DataType)
-    return PointPrimalDual(PointE(mats, vec, dims), zeros(T, m), PointE(mats, vec, dims))
+    return PointPrimalDual(PointE(dims, vecdim, T, U), zeros(T, m), PointE(dims, vecdim, T, U))
 end
 
 
@@ -133,7 +133,7 @@ end
 function get_defaultoption()
     return OrderedDict{Symbol, Any}(
                     :opt_ε => 1e-10,
-                    :opt_maxit => 60,
+                    :opt_maxit => 300,
                     :opt_outlev => 1,
     )
 end

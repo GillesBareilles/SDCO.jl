@@ -1,6 +1,7 @@
 export testcase1a, testcase1a_point, testcase1b, testcase1c
 export testcase1abis, testcase1ater
 export testcase2
+export testcase4a, testcase4b, testcase4c
 
 # Test case 1.a
 function testcase1a_point()
@@ -154,7 +155,7 @@ function testcase1c(; symmetric=false)
     return problem, PointPrimalDual(x, y, s)
 end
 
-function testcase2(p, q, r; storage=:sparsesym)
+function testcase2(p, q, r; storage=:sparsefull)
 
     ## Objective
     B0 = rand(q, r)
@@ -217,4 +218,53 @@ function testcase2(p, q, r; storage=:sparsesym)
     z = PointPrimalDual(x, y, s)
 
     return problem, z
+end
+
+
+function testcase4a()
+    cmat = [sparse([3], [3], [1.], 3, 3)]
+    a1mats = [sparse([1, 2, 3], [2, 1, 3], [1., 1., 1.], 3, 3)]
+    a2mats = [sparse([2], [2], [1.], 3, 3)]
+
+    c = PointE(cmat, Vector{Float64}())
+    a1 = PointE(a1mats, Vector{Float64}())
+    a2 = PointE(a2mats, Vector{Float64}())
+
+    A = [a1, a2]
+
+    b = Vector{Float64}([-1, 0])
+
+    return SDCOContext(c, A, b)
+end
+
+function testcase4b()
+    cmat = [sparse(Float64[0 1; 1 0])]
+    a1mats = [sparse(Float64[-1 0; 0 0])]
+    a1mats = [sparse(Float64[0 0; 0 -1])]
+
+    c = PointE(cmat, Vector{Float64}())
+    a1 = PointE(a1mats, Vector{Float64}())
+    a2 = PointE(a2mats, Vector{Float64}())
+
+    A = [a1, a2]
+
+    b = Vector{Float64}([-1, 0])
+
+    return SDCOContext(c, A, b)
+end
+
+function testcase4c()
+    cmat = [sparse(Float64[0 0; 0 0])]
+    a1mats = [sparse(Float64[1 0; 0 0])]
+    a1mats = [sparse(Float64[0 1; 1 0])]
+
+    c = PointE(cmat, Vector{Float64}())
+    a1 = PointE(a1mats, Vector{Float64}())
+    a2 = PointE(a2mats, Vector{Float64}())
+
+    A = [a1, a2]
+
+    b = Vector{Float64}([0, 2])
+
+    return SDCOContext(c, A, b)
 end
