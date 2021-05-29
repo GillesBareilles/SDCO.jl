@@ -98,6 +98,7 @@ mutable struct SDCOContext{T, matT}
     nscalvar::Int                   # Number of scalar variables (of type T)
     m::Int                          # Nb of constraints
     nc::Int
+    one::PointE{T, Sparse{T}}
 
     options::OrderedDict
 end
@@ -127,7 +128,9 @@ function SDCOContext(c::PointE{T, matT}, A::Vector{PointE{T, matT}}, b::Array{T,
         end
     end
 
-    return SDCOContext(c, A, b, 0, 0, nsdpvar, nscalvar, m, nc, defoptions)
+    one = ones(c, Sparse{T})
+
+    return SDCOContext(c, A, b, 0, 0, nsdpvar, nscalvar, m, nc, one, defoptions)
 end
 
 function get_defaultoption()

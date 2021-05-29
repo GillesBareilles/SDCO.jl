@@ -56,10 +56,8 @@ function solvesystem(pb::SDCOContext, x::PointE{T, matT}, y::AbstractArray{T}, s
     dτ = num / denom
     dy = sol1 + sol2*dτ
 
-    @show   norm( evaluate(A, hadamard(w, evaluate(A, dy), w)) - bAwcw * dτ - f̂1 )
     @assert norm( evaluate(A, hadamard(w, evaluate(A, dy), w)) - bAwcw * dτ - f̂1 ) < tol
 
-    @show   norm( dot(b, dy) - dot(c, hadamard(w, evaluate(A, dy), w)) + (κ/τ + dot(c, wcw))*dτ - f̂2 )
     @assert norm( dot(b, dy) - dot(c, hadamard(w, evaluate(A, dy), w)) + (κ/τ + dot(c, wcw))*dτ - f̂2 ) < tol
 
     ## Deriving full solution
@@ -68,15 +66,10 @@ function solvesystem(pb::SDCOContext, x::PointE{T, matT}, y::AbstractArray{T}, s
     dx = f4 - hadamard(w, ds, w)
     dκ = (f5 - κ*dτ) / τ
 
-    # @show norm( evaluate(A, dx) - dτ*b - f1)
     @assert norm( evaluate(A, dx) - dτ*b - f1) < tol
-    # @show norm( -evaluate(A, dy) - ds + product(c, dτ) - f2)
     @assert norm( -evaluate(A, dy) - ds + product(c, dτ) - f2) < tol
-    # @show norm( dot(b, dy) - dot(c, dx) - dκ - f3)
     @assert norm( dot(b, dy) - dot(c, dx) - dκ - f3) < tol
-    # @show norm( dx + hadamard(w, ds, w) - f4)
     @assert norm( dx + hadamard(w, ds, w) - f4) < tol
-    # @show norm( τ*dκ + κ*dτ - f5)
     @assert norm( τ*dκ + κ*dτ - f5) < tol
 
     @assert norm(dot(dx, ds) + dκ*dτ - η*(1-γ-η)*(pb.nc+1)*μ) < tol
@@ -100,15 +93,10 @@ function checksystem(pb::SDCOContext{T}, x, y, s, τ, κ, η, γ, dx, dy, ds, d�
 
     tol = 1e-13
 
-    # @show norm( evaluate(A, dx) - dτ*b - f1)
     @assert norm( evaluate(A, dx) - dτ*b - f1) < tol
-    # @show norm( -evaluate(A, dy) - ds + product(c, dτ) - f2)
     @assert norm( -evaluate(A, dy) - ds + product(c, dτ) - f2) < tol
-    # @show norm( dot(b, dy) - dot(c, dx) - dκ - f3)
     @assert norm( dot(b, dy) - dot(c, dx) - dκ - f3) < tol
-    # @show norm( dx + hadamard(w, ds, w) - f4)
     @assert norm( hadamard(dx, s) + hadamard(ds, x) - f4) < tol
-    # @show norm( τ*dκ + κ*dτ - f5)
     @assert norm( τ*dκ + κ*dτ - f5) < tol
 end
 
@@ -147,18 +135,19 @@ function solve(pb::SDCOContext{T}) where {T<:Number}
     μ = μ0
 
     one = ones(pb.c, Dense{T})
-    maxit = 5
+    maxit = 20
     it = 0
+    β = 1/4
 
 
     μ_hist = T[μ0]
     θ_hist = T[1]
     α_hist = T[]
 
-    ittype = :corr
+    ittype = :pred
 
     print_header(pb)
-    print_it(pb, it, x, y, s, τ, κ, rP0, rD0, last(μ_hist), last(θ_hist), 0.01)
+    print_it(pb, it, x, y, s, τ, κ, rP0, rD0, last(μ_hist), last(θ_hist), NaN, NaN)
 
     it += 1
 
@@ -166,14 +155,18 @@ function solve(pb::SDCOContext{T}) where {T<:Number}
         printstyled("------ iteration $it, $ittype\n", color=:red)
 
         μ = mu(x, s, τ, κ)
+
+        βpt = norm([hadamard(x, s)-μ*pb.one  τ*κ-μ]) / μ
+
         println("μ = ", μ)
         println("| x•s - μe | = ", norm(hadamard(x, s) - μ * one))
         println(" | τκ - μ |  = ", norm(τ*κ - μ))
+        println(" pt in N($βpt)...")
 
         if ittype == :pred
-            η = T(0)
-        else
             η = T(1)
+        else
+            η = T(0)
         end
         γ = T(1-η)
 
@@ -186,12 +179,16 @@ function solve(pb::SDCOContext{T}) where {T<:Number}
         # Property that should always hold
         @assert norm(dot(dx, ds) + dκ*dτ - η*(1-γ-η)*(pb.nc+1)*μ) < 1e-13
 
-        @show norm(dx)
-        @show norm(dy)
-        @show norm(ds)
+        # @show norm(dx), norm(dy), norm(ds)
 
         ## Choosing stepsize α
-        α = 0.3
+        # find α s.t. z + αdz ∈ N(β) and z >0
+        if ittype == :pred
+            α = find_α(pb, x, y, s, τ, κ, dx, dy, ds, dτ, dκ, β)
+        else
+            α = T(1)
+        end
+        @show α
 
         ## Updating variables
         add!(x, α*dx)
@@ -206,7 +203,7 @@ function solve(pb::SDCOContext{T}) where {T<:Number}
         @assert τ > 0
         @assert κ > 0
 
-        @show min(pb, x), min(pb, s), τ, κ
+        # @show min(pb, x), min(pb, s), τ, κ
 
 
         rPk = get_rP(pb, x, τ)
@@ -218,7 +215,7 @@ function solve(pb::SDCOContext{T}) where {T<:Number}
         μ = mu(x, s, τ, κ)
 
         print_header(pb)
-        print_it(pb, it, x, y, s, τ, κ, rPk, rDk, μ, θ, 0.01)
+        print_it(pb, it, x, y, s, τ, κ, rPk, rDk, μ, θ, α, NaN)
 
         ## Checking evolution rules hold, logging, it printing
 
@@ -232,10 +229,10 @@ function solve(pb::SDCOContext{T}) where {T<:Number}
         # @show norm(rDk - θ * rD0)
         # @show norm(rGk - θ * rG0)
 
-        # @show dot(x0, s) + dot(s0, x) + τ0 * κ + τ * κ0 - (μ/θ + θ*μ0)*(get_nc(x)+1)
+        # @assert abs(dot(x0, s) + dot(s0, x) + τ0 * κ + τ * κ0 - (μ/θ + θ*μ0)*(get_nc(x)+1)) < 1e-13
 
-        printstyled("Condition 1 (9) : |dx⋅ds + dτ⋅dκ| ≤ O(μ)   :  ", norm(dot(ds, dx) + dτ*dκ), "  ≤  ", μ, "\n", color=:yellow)
-        printstyled("Condition 2 (12): Ω(1) ≤ μ/θ ≤ O(1), θ → 0 :  ", θ / μ, "    ", θ, "\n", color=:yellow)
+        # printstyled("Condition 1 (9) : |dx⋅ds + dτ⋅dκ| ≤ O(μ)   :  ", norm(dot(ds, dx) + dτ*dκ), "  ≤  ", μ, "\n", color=:yellow)
+        # printstyled("Condition 2 (12): Ω(1) ≤ μ/θ ≤ O(1), θ → 0 :  ", θ / μ, "    ", θ, "\n", color=:yellow)
 
         if ittype == :pred
             ittype = :corr
@@ -253,14 +250,51 @@ function solve(pb::SDCOContext{T}) where {T<:Number}
     nothing
 end
 
+function testα(pb, xdx, ydy, sds, τdτ, κdκ, μ, β)
+
+    isincone = (min(pb, xdx) > 0) && (min(pb, sds) > 0) && (τdτ > 0) && (κdκ > 0)
+
+    isneighbor = true
+    # isneighbor = norm([hadamard(xdx, sds)-μ*pb.one  τdτ*κdκ-μ]) < β*μ
+
+    return isincone && isneighbor
+end
+
+
+function find_α(pb, x, y, s, τ, κ, dx, dy, ds, dτ, dκ, β)
+    μ = mu(x, s, τ, κ)
+
+    αmin = 0.
+    αmax = 1.
+
+    while testα(pb, x + αmax*dx, y + αmax*dy, s + αmax*ds, τ + αmax*dτ, κ + αmax*dκ, μ, β)
+        αmax *= 2
+    end
+
+    while abs(αmax - αmin) > 1e-5
+        αmid = (αmax + αmin) / 2
+
+        if testα(pb, x + αmid*dx, y + αmid*dy, s + αmid*ds, τ + αmid*dτ, κ + αmid*dκ, μ, β)
+            αmin = αmid
+        else
+            αmax = αmid
+        end
+    end
+
+    return αmin
+end
+
+
+
 function print_header(pb::SDCOContext)
     println("it  primerr    dualerr    gaperr       μ          θ          α     it. time")
 end
 
-function print_it(pb::SDCOContext, it, x, y, s, τ, κ, rPk, rDk, μ, θ, time)
+function print_it(pb::SDCOContext, it, x, y, s, τ, κ, rPk, rDk, μ, θ, α, time)
+    @assert τ>0
     primfeaserr = norm(rPk, Inf) / ((1 + norm(pb.b, Inf)) * τ)
     dualfeaserr = norm(rDk, Inf) / ((1 + norm(pb.c, Inf)) * τ)
     gap = abs(dot(pb.c, x) - dot(pb.b, y)) / (τ + max(dot(pb.c, x), dot(pb.b, y)))
 
-    @printf("%2i  %.3e  %.3e  %.3e    %.2e   %.2e   %f\n", it, primfeaserr, dualfeaserr, gap, μ, θ, 1)
+    @printf("%2i  %.3e  %.3e  %.3e    %.2e   %.2e   %f\n", it, primfeaserr, dualfeaserr, gap, μ, θ, α)
 end
